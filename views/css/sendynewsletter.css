@@ -1,0 +1,44 @@
+/* Sendy newsletter */
+#sendy_newsletter {
+	padding:7px;
+	border-top:1px solid #ccc;
+        border-bottom:1px solid #ccc;
+	background:#fff;
+        margin: 0 auto;
+        text-align: center;
+}
+#sendy_newsletter p {padding:0;}
+
+#sendy_newsletter p.sn_success {
+	color: #418B19;
+	font-weight: bold;
+	display: none;
+}
+#sendy_newsletter p.sn_warning {
+	color: #DA0F00;
+	font-weight: bold;
+	display: none;
+}
+
+#sendy_newsletter input#sendynewsletter_email, #sendy_newsletter input#sendynewsletter_name{
+	height:26px;
+	width:148px;
+	border:1px solid #ccc;
+        margin-bottom: 0px !important;
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  #newsletter_span1 {
+    display:none;
+  }
+}
+
+@media (max-width: 767px) { 
+  #newsletter_span1 {
+    display:none;
+  }
+  #newsletter_span3 {
+    display:none;
+  }
+}
+
