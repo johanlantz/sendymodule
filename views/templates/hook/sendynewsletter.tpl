@@ -1,6 +1,6 @@
 <!-- Sendy Newsletter module-->
 {if ($page_name =='index') ||  ($page_name =='product') ||  ($page_name =='category')}
-{* if {$lang_iso} == "es" *}
+{if {$sendynews.list|count_characters} > 1}
 <div id="sendy_newsletter" class="">
 	<span id="newsletter_span1" class="newsletter_element"><img src="{$modules_dir}sendynewsletter/img/{$lang_iso}/newsletter-signup-products-img.jpg"></span>
 	<span id="newsletter_span2" class="newsletter_element"><img height="150" width="286" src="{$modules_dir}sendynewsletter/img/{$lang_iso}/newsletter-signup-subscribe-img-retina.png"></span>
@@ -30,6 +30,6 @@
 		<p class="sn_success">{l s='Subscription successful.' mod='sendynewsletter'}</p>
 	</span>
 </div>
-{* /if *}
+{/if}
 {/if}
 <!-- /Sendy Newsletter module-->

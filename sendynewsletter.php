@@ -32,9 +32,9 @@ if (!defined('_PS_VERSION_'))
 
 class SendyNewsletter extends Module
 {
-	private $list;
 	private $installation;
-	private $setup;
+    private $setup;
+    private $availableLanguages;
 
 	public function __construct()
 	{
@@ -55,17 +55,16 @@ class SendyNewsletter extends Module
 	 	if (Configuration::get('SENDYNEWSLETTER_INSTALLATION')) {
 	 		$this->installation = Configuration::get('SENDYNEWSLETTER_INSTALLATION');
 	 	}
-	 	if (Configuration::get('SENDYNEWSLETTER_LIST')) {
-	 		$this->list = Configuration::get('SENDYNEWSLETTER_LIST');
-
-	 	}
-	    if (!isset($this->installation) || !isset($this->list)) {
+	 	
+	    if (!isset($this->installation)) {
 	    	$this->warning = $this->l('You need to set installation url and list before using this module');
 	    	$this->setup = false;
 	    }
 	    else {
 	    	$this->setup = true;
 	    }
+
+        $this->availableLanguages = Language::getLanguages();
 
 	    parent::__construct();
 	}
@@ -75,6 +74,10 @@ class SendyNewsletter extends Module
 		if (Shop::isFeatureActive()) {
 		  Shop::setContext(Shop::CONTEXT_ALL);
 		}
+ 
+        foreach ($this->availableLanguages as $lang) {
+            Configuration::updateValue('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'], "");
+        }
 
 		return parent::install() 
 		&& $this->registerHook('displayMyPreFooter')
@@ -82,14 +85,17 @@ class SendyNewsletter extends Module
 		&& Configuration::updateValue('SENDYNEWSLETTER_IP', false)
 		&& Configuration::updateValue('SENDYNEWSLETTER_IPVALUE', '')
 		&& Configuration::updateValue('SENDYNEWSLETTER_NAME', false)
-		&& Configuration::updateValue('SENDYNEWSLETTER_NAMEREQ', false);
+        && Configuration::updateValue('SENDYNEWSLETTER_NAMEREQ', false);
 	}
 
 	public function uninstall()
 	{
+        foreach ($this->availableLanguages as $lang) {
+            Configuration::deleteByName('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code']);
+        }
+
 		return parent::uninstall()
 		&& Configuration::deleteByName('SENDYNEWSLETTER_INSTALLATION')
-		&& Configuration::deleteByName('SENDYNEWSLETTER_LIST')
 		&& Configuration::deleteByName('SENDYNEWSLETTER_IP')
 		&& Configuration::deleteByName('SENDYNEWSLETTER_IPVALUE')
 		&& Configuration::deleteByName('SENDYNEWSLETTER_NAME')
@@ -98,10 +104,10 @@ class SendyNewsletter extends Module
 
 	public function hookDisplayMyPreFooter($params)
 	{
-		$this->context->controller->addJS($this->_path.'views/js/sendynewsletter.js');
+		//$this->context->controller->addJS($this->_path.'views/js/sendynewsletter.js');
 		$sendy = array(
       		'url' 		=> Configuration::get('SENDYNEWSLETTER_INSTALLATION'),
-			'list' 		=> Configuration::get('SENDYNEWSLETTER_LIST'),
+            'list' 		=> Configuration::get('SENDYNEWSLETTER_COUNTRY_' . $this->context->language->iso_code),
 			'ip' 		=> (int)Configuration::get('SENDYNEWSLETTER_IP'),
 			'ipval'		=> $_SERVER["REMOTE_ADDR"],
 			'ipfield'	=> Configuration::get('SENDYNEWSLETTER_IPVALUE'),
@@ -129,11 +135,10 @@ class SendyNewsletter extends Module
 	public function getContent()
   {
       $output = null;
-   
+      
       if (Tools::isSubmit('submit'.$this->name))
       {
           $installation = Tools::getValue('SENDYNEWSLETTER_INSTALLATION');
-          $list = Tools::getValue('SENDYNEWSLETTER_LIST');
           $ip = (int)Tools::getValue('SENDYNEWSLETTER_IP');
           $ip_var = Tools::getValue('SENDYNEWSLETTER_IPVALUE');
           $name = (int)Tools::getValue('SENDYNEWSLETTER_NAME');
@@ -142,9 +147,7 @@ class SendyNewsletter extends Module
           if (!$installation  || empty($installation) || !Validate::isAbsoluteUrl($installation)) {
               $output .= $this->displayError( $this->l('Invalid installation url'));
           }
-          if (!$list  || empty($list) || !Validate::isGenericName($list)) {
-              $output .= $this->displayError( $this->l('Invalid list'));
-          }
+         
           if ($ip == 1)
           {
               if (!$ip_var  || empty($ip_var) || !Validate::isGenericName($ip_var)) {
@@ -154,8 +157,10 @@ class SendyNewsletter extends Module
 
           if ($output == null)
           {
+            foreach ($this->availableLanguages as $lang) {
+                Configuration::updateValue('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'], Tools::getValue('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code']));
+              }
           	  Configuration::updateValue('SENDYNEWSLETTER_INSTALLATION', $installation);
-          	  Configuration::updateValue('SENDYNEWSLETTER_LIST', $list);
           	  Configuration::updateValue('SENDYNEWSLETTER_IP', $ip);
               Configuration::updateValue('SENDYNEWSLETTER_IPVALUE', $ip_var);
               Configuration::updateValue('SENDYNEWSLETTER_NAME', $name);
@@ -184,14 +189,6 @@ class SendyNewsletter extends Module
                 'label' => $this->l('Installation'),
                 'name' => 'SENDYNEWSLETTER_INSTALLATION',
                 'desc' => $this->l('Url address of your sendy installation eg "http://your_sendy_installation"'),
-                'size' => 30,
-                'required' => true
-            ),
-            array(
-                'type' => 'text',
-                'label' => $this->l('List'),
-                'name' => 'SENDYNEWSLETTER_LIST',
-                'desc' => $this->l('The list id you want to subscribe a user to. This encrypted & hashed id can be found under "View all lists" section named "ID"'),
                 'size' => 30,
                 'required' => true
             ),
@@ -269,6 +266,18 @@ class SendyNewsletter extends Module
         )
     );
      
+    // add country specific lists
+    foreach ($this->availableLanguages as $lang) {
+        $extra = array(
+            'type' => 'text',
+            'label' => $this->l('Language specific list id'),
+            'name' => 'SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'],
+            'desc' => $lang['iso_code'],
+            'size' => 20
+        ); 
+        array_push($fields_form[0]['form']['input'], $extra);
+    }
+
     $helper = new HelperForm();
      
     // Module, token and currentIndex
@@ -301,13 +310,18 @@ class SendyNewsletter extends Module
     // Load current value
     $helper->fields_value = array(
       	'SENDYNEWSLETTER_INSTALLATION' 	=> Configuration::get('SENDYNEWSLETTER_INSTALLATION'),
-		'SENDYNEWSLETTER_LIST' 			=> Configuration::get('SENDYNEWSLETTER_LIST'),
 		'SENDYNEWSLETTER_IP' 			=> Configuration::get('SENDYNEWSLETTER_IP'),
 		'SENDYNEWSLETTER_IPVALUE' 		=> Configuration::get('SENDYNEWSLETTER_IPVALUE'),
 		'SENDYNEWSLETTER_NAME' 			=> Configuration::get('SENDYNEWSLETTER_NAME'),
 		'SENDYNEWSLETTER_NAMEREQ' 		=> Configuration::get('SENDYNEWSLETTER_NAMEREQ')
       );
-     
+
+      //create the country specific fields
+      foreach ($this->availableLanguages as $lang) {
+        $helper->fields_value['SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code']] = Configuration::get('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code']);
+      }
+
+ 
     return $helper->generateForm($fields_form);
   }
 }
