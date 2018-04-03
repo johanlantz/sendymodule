@@ -80,6 +80,7 @@ class SendyNewsletter extends Module
         return parent::install()
         && $this->registerHook('displayMyPreFooter')
         && $this->registerHook('header')
+        && $this->registerHook(array('actionCustomerAccountAdd'))
         && Configuration::updateValue('SENDYNEWSLETTER_IP', false)
         && Configuration::updateValue('SENDYNEWSLETTER_IPVALUE', '')
         && Configuration::updateValue('SENDYNEWSLETTER_NAME', false)
@@ -317,5 +318,36 @@ class SendyNewsletter extends Module
         }
 
         return $helper->generateForm($fields_form);
+    }
+
+
+    public function hookActionCustomerAccountAdd($params)
+    {
+        $url = Configuration::get('SENDYNEWSLETTER_INSTALLATION') . '/subscribe';
+        $ip_set = (int)Configuration::get('SENDYNEWSLETTER_IP');
+        $ip_var = Configuration::get('SENDYNEWSLETTER_IPVALUE');
+        
+        $customerLang = Language::getIsoById($params['newCustomer']->id_lang);
+        $list = Configuration::get('SENDYNEWSLETTER_COUNTRY_' . $customerLang);
+        
+        $data = array(
+            'list'		=> $list,
+            'email' 	=> $params['newCustomer']->email,
+            'boolean'	=> 'true'
+        );
+
+        $data['name'] = $params['newCustomer']->firstname;
+
+        if ($ip_set == 1 && $ip_var && !empty($ip_var)) {
+            $data[$ip_var] = $_SERVER["REMOTE_ADDR"];
+        }
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+
+        curl_exec($ch);
+        return true;
     }
 }
