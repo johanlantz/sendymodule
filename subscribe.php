@@ -37,6 +37,11 @@ if (isset($_POST)) {
 else {
 	exit;
 }
+
+if ($hp && strlen($hp) > 0) {
+	exit;
+}
+
 $url = Configuration::get('SENDYNEWSLETTER_INSTALLATION') . '/subscribe';
 $ip_set = (int)Configuration::get('SENDYNEWSLETTER_IP');
 $ip_var = Configuration::get('SENDYNEWSLETTER_IPVALUE');
