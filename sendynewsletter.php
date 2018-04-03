@@ -355,6 +355,8 @@ class SendyNewsletter extends Module
         $customerLang = Language::getIsoById($params['newCustomer']->id_lang);
         $list = Configuration::get('SENDYNEWSLETTER_COUNTRY_' . $customerLang);
         
+        //This might not work if the original newsletter module is not active (depending on what PS_CUSTOMER_NWSL does)
+        //https://github.com/PrestaShop/PrestaShop/blob/1.6.1.x/controllers/front/IdentityController.php#L152
         $newUserHasOptInForNewsletter = $params['newCustomer']->newsletter;
 
         //Unless we override the opt-in setting, we should not register the new users email to any list
