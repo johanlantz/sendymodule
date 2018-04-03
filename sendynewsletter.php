@@ -76,7 +76,7 @@ class SendyNewsletter extends Module
         foreach ($this->availableLanguages as $lang) {
             Configuration::updateValue('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'], "");
         }
-
+        
         return parent::install()
         && $this->registerHook('displayMyPreFooter')
         && $this->registerHook('header')
@@ -84,7 +84,8 @@ class SendyNewsletter extends Module
         && Configuration::updateValue('SENDYNEWSLETTER_IP', false)
         && Configuration::updateValue('SENDYNEWSLETTER_IPVALUE', '')
         && Configuration::updateValue('SENDYNEWSLETTER_NAME', false)
-        && Configuration::updateValue('SENDYNEWSLETTER_NAMEREQ', false);
+        && Configuration::updateValue('SENDYNEWSLETTER_NAMEREQ', false)
+        && Configuration::updateValue('SENDYNEWSLETTER_RESPECT_USER_OPT_IN', true);
     }
 
     public function uninstall()
@@ -98,7 +99,8 @@ class SendyNewsletter extends Module
         && Configuration::deleteByName('SENDYNEWSLETTER_IP')
         && Configuration::deleteByName('SENDYNEWSLETTER_IPVALUE')
         && Configuration::deleteByName('SENDYNEWSLETTER_NAME')
-        && Configuration::deleteByName('SENDYNEWSLETTER_NAMEREQ');
+        && Configuration::deleteByName('SENDYNEWSLETTER_NAMEREQ')
+        && Configuration::deleteByName('SENDYNEWSLETTER_RESPECT_USER_OPT_IN');
     }
 
     public function hookDisplayMyPreFooter($params)
@@ -141,6 +143,7 @@ class SendyNewsletter extends Module
             $ip_var = Tools::getValue('SENDYNEWSLETTER_IPVALUE');
             $name = (int) Tools::getValue('SENDYNEWSLETTER_NAME');
             $name_req = (int) Tools::getValue('SENDYNEWSLETTER_NAMEREQ');
+            $respect_opt_in = (int) Tools::getValue('SENDYNEWSLETTER_RESPECT_USER_OPT_IN');
 
             if (!$installation || empty($installation) || !Validate::isAbsoluteUrl($installation)) {
                 $output .= $this->displayError($this->l('Invalid installation url'));
@@ -161,6 +164,7 @@ class SendyNewsletter extends Module
                 Configuration::updateValue('SENDYNEWSLETTER_IPVALUE', $ip_var);
                 Configuration::updateValue('SENDYNEWSLETTER_NAME', $name);
                 Configuration::updateValue('SENDYNEWSLETTER_NAMEREQ', $name_req);
+                Configuration::updateValue('SENDYNEWSLETTER_RESPECT_USER_OPT_IN', $respect_opt_in);
                 $output .= $this->displayConfirmation($this->l('Settings updated'));
             }
         }
@@ -203,6 +207,26 @@ class SendyNewsletter extends Module
                         ),
                         array(
                             'id' => 'ip_off',
+                            'value' => 0,
+                            'label' => $this->l('Disabled'),
+                        ),
+                    ),
+                ),
+                array(
+                    'type' => 'radio',
+                    'label' => $this->l('Respect opt-in'),
+                    'name' => 'SENDYNEWSLETTER_RESPECT_USER_OPT_IN',
+                    'desc' => $this->l('Respect new clients newsletter setting. If you do not show the checkbox and new clients should be auto subscribed, choose disabled here.'),
+                    'is_bool' => true,
+                    'class' => 't',
+                    'values' => array(
+                        array(
+                            'id' => 'respect_opt_in_on',
+                            'value' => 1,
+                            'label' => $this->l('Enabled'),
+                        ),
+                        array(
+                            'id' => 'respect_opt_in_off',
                             'value' => 0,
                             'label' => $this->l('Disabled'),
                         ),
@@ -310,6 +334,7 @@ class SendyNewsletter extends Module
             'SENDYNEWSLETTER_IPVALUE' => Configuration::get('SENDYNEWSLETTER_IPVALUE'),
             'SENDYNEWSLETTER_NAME' => Configuration::get('SENDYNEWSLETTER_NAME'),
             'SENDYNEWSLETTER_NAMEREQ' => Configuration::get('SENDYNEWSLETTER_NAMEREQ'),
+            'SENDYNEWSLETTER_RESPECT_USER_OPT_IN' => Configuration::get('SENDYNEWSLETTER_RESPECT_USER_OPT_IN')
         );
 
         //create the country specific fields
@@ -323,13 +348,20 @@ class SendyNewsletter extends Module
 
     public function hookActionCustomerAccountAdd($params)
     {
+        $respect_opt_in = (bool) Configuration::get('SENDYNEWSLETTER_RESPECT_USER_OPT_IN');
         $url = Configuration::get('SENDYNEWSLETTER_INSTALLATION') . '/subscribe';
         $ip_set = (int)Configuration::get('SENDYNEWSLETTER_IP');
         $ip_var = Configuration::get('SENDYNEWSLETTER_IPVALUE');
-        
         $customerLang = Language::getIsoById($params['newCustomer']->id_lang);
         $list = Configuration::get('SENDYNEWSLETTER_COUNTRY_' . $customerLang);
         
+        $newUserHasOptInForNewsletter = $params['newCustomer']->newsletter;
+
+        //Unless we override the opt-in setting, we should not register the new sers email to any list
+        if (!$newUserHasOptInForNewsletter && $respect_opt_in) {
+            return;
+        }
+
         $data = array(
             'list'		=> $list,
             'email' 	=> $params['newCustomer']->email,
