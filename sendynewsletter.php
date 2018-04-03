@@ -357,7 +357,7 @@ class SendyNewsletter extends Module
         
         $newUserHasOptInForNewsletter = $params['newCustomer']->newsletter;
 
-        //Unless we override the opt-in setting, we should not register the new sers email to any list
+        //Unless we override the opt-in setting, we should not register the new users email to any list
         if (!$newUserHasOptInForNewsletter && $respect_opt_in) {
             return;
         }
@@ -371,7 +371,7 @@ class SendyNewsletter extends Module
         $data['name'] = $params['newCustomer']->firstname;
 
         if ($ip_set == 1 && $ip_var && !empty($ip_var)) {
-            $data[$ip_var] = $_SERVER["REMOTE_ADDR"];
+            $data[$ip_var] = $params['newCustomer']->ip_registration_newsletter;
         }
 
         $ch = curl_init();
