@@ -1,19 +1,5 @@
 <?php
 /*
- * The MIT License (MIT)
- *
- * Copyright (c) 2013 Iztok Svetik
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -21,10 +7,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
- * -----------------------------------------------------------------------------
- * @author   Iztok Svetik, Johan Lantz
- * @github   https://github.com/johanlantz
  */
 
 if (!defined('_PS_VERSION_')) {
@@ -41,13 +23,13 @@ class SendyNewsletter extends Module
     {
         $this->name = 'sendynewsletter';
         $this->tab = 'front_office_features';
-        $this->version = '1.1';
-        $this->author = 'Iztok Svetik - Johan Lantz';
+        $this->version = '1.2';
+        $this->author = '';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = array('min' => '1.5', 'max' => '1.6.9');
 
-        $this->displayName = $this->l('Sendy Newsletter Block');
-        $this->description = $this->l('Adds a block that imports subscribers directly to your Sendy list.');
+        $this->displayName = $this->l('Sendy Newsletter Integration');
+        $this->description = $this->l('Sync newsletter subscribers and customers with your sendy installation');
 
         $this->confirmUninstall = $this->l('Are you sure you want to uninstall?');
 
@@ -56,7 +38,7 @@ class SendyNewsletter extends Module
         }
 
         if (!isset($this->installation)) {
-            $this->warning = $this->l('You need to set installation url and list before using this module');
+            $this->warning = $this->l('You must configure your sendy installation path before saving.');
             $this->setup = false;
         } else {
             $this->setup = true;
@@ -77,6 +59,10 @@ class SendyNewsletter extends Module
             Configuration::updateValue('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'], "");
         }
         
+        foreach ($this->availableLanguages as $lang) {
+            Configuration::updateValue('SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code'], "");
+        }
+
         return parent::install()
         && $this->registerHook('displayMyPreFooter')
         && $this->registerHook('header')
@@ -92,6 +78,10 @@ class SendyNewsletter extends Module
     {
         foreach ($this->availableLanguages as $lang) {
             Configuration::deleteByName('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code']);
+        }
+
+        foreach ($this->availableLanguages as $lang) {
+            Configuration::deleteByName('SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code']);
         }
 
         return parent::uninstall()
@@ -159,6 +149,11 @@ class SendyNewsletter extends Module
                 foreach ($this->availableLanguages as $lang) {
                     Configuration::updateValue('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'], Tools::getValue('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code']));
                 }
+
+                foreach ($this->availableLanguages as $lang) {
+                    Configuration::updateValue('SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code'], Tools::getValue('SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code']));
+                }
+
                 Configuration::updateValue('SENDYNEWSLETTER_INSTALLATION', $installation);
                 Configuration::updateValue('SENDYNEWSLETTER_IP', $ip);
                 Configuration::updateValue('SENDYNEWSLETTER_IPVALUE', $ip_var);
@@ -290,8 +285,20 @@ class SendyNewsletter extends Module
         foreach ($this->availableLanguages as $lang) {
             $extra = array(
                 'type' => 'text',
-                'label' => $this->l('Language specific list id'),
+                'label' => $this->l('Language specific list id for NEWSLETTER'),
                 'name' => 'SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'],
+                'desc' => $lang['iso_code'],
+                'size' => 20,
+            );
+            array_push($fields_form[0]['form']['input'], $extra);
+        }
+
+        // add country specific customer lists lists
+        foreach ($this->availableLanguages as $lang) {
+            $extra = array(
+                'type' => 'text',
+                'label' => $this->l('Language specific list id for CUSTOMERS'),
+                'name' => 'SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code'],
                 'desc' => $lang['iso_code'],
                 'size' => 20,
             );
@@ -337,10 +344,16 @@ class SendyNewsletter extends Module
             'SENDYNEWSLETTER_RESPECT_USER_OPT_IN' => Configuration::get('SENDYNEWSLETTER_RESPECT_USER_OPT_IN')
         );
 
-        //create the country specific fields
+        //Load existing values for the country specific newsletter fields
         foreach ($this->availableLanguages as $lang) {
             $helper->fields_value['SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code']] = Configuration::get('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code']);
         }
+
+        //Load existing values for the country specific customer fields
+        foreach ($this->availableLanguages as $lang) {
+            $helper->fields_value['SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code']] = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code']);
+        }
+            
 
         return $helper->generateForm($fields_form);
     }
@@ -353,8 +366,12 @@ class SendyNewsletter extends Module
         $ip_set = (int)Configuration::get('SENDYNEWSLETTER_IP');
         $ip_var = Configuration::get('SENDYNEWSLETTER_IPVALUE');
         $customerLang = Language::getIsoById($params['newCustomer']->id_lang);
-        $list = Configuration::get('SENDYNEWSLETTER_COUNTRY_' . $customerLang);
+        $list = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $customerLang);
         
+        //Do not subscribe if this country does not have a customer newsletter list
+        if ($list == null || strlen($list) == 0) {
+            return;
+        }
         //This might not work if the original newsletter module is not active (depending on what PS_CUSTOMER_NWSL does)
         //https://github.com/PrestaShop/PrestaShop/blob/1.6.1.x/controllers/front/IdentityController.php#L152
         $newUserHasOptInForNewsletter = $params['newCustomer']->newsletter;
