@@ -26,7 +26,7 @@ class SendyNewsletter extends Module
         $this->version = '1.2';
         $this->author = '';
         $this->need_instance = 0;
-        $this->ps_versions_compliancy = array('min' => '1.5', 'max' => '1.6.9');
+        $this->ps_versions_compliancy = array('min' => '1.5', 'max' => '1.7.99');
 
         $this->displayName = $this->l('Sendy Newsletter Integration');
         $this->description = $this->l('Sync newsletter subscribers and customers with your sendy installation');
@@ -45,7 +45,6 @@ class SendyNewsletter extends Module
         }
 
         $this->availableLanguages = Language::getLanguages();
-
         parent::__construct();
     }
 
@@ -65,6 +64,7 @@ class SendyNewsletter extends Module
 
         return parent::install()
         && $this->registerHook('displayMyPreFooter')
+        && $this->registerHook('displayFooter')
         && $this->registerHook('header')
         && $this->registerHook(array('actionCustomerAccountAdd'))
         && Configuration::updateValue('SENDYNEWSLETTER_IP', false)
@@ -93,6 +93,11 @@ class SendyNewsletter extends Module
         && Configuration::deleteByName('SENDYNEWSLETTER_RESPECT_USER_OPT_IN');
     }
 
+    public function hookDisplayFooter($params)
+    {
+        return $this->hookDisplayMyPreFooter($params);
+    }
+
     public function hookDisplayMyPreFooter($params)
     {
         //$this->context->controller->addJS($this->_path.'views/js/sendynewsletter.js');
@@ -109,7 +114,12 @@ class SendyNewsletter extends Module
             'sendynews' => $sendy,
         ));
         if ($this->setup) {
-            return $this->display(__FILE__, 'sendynewsletter.tpl');
+            if (_PS_VERSION_ >= 1.7) {
+                return $this->display(__FILE__, 'sendynewsletter2.tpl');
+            } else {
+                return $this->display(__FILE__, 'sendynewsletter.tpl');
+            }
+            
         }
     }
 

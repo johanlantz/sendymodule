@@ -1,10 +1,10 @@
 <!-- Sendy Newsletter module-->
-{if (($page_name =='index') ||  ($page_name =='product') ||  ($page_name =='category')) }
+{if (($page.page_name == 'index') || ($page.page_name == 'product') || ($page.page_name == 'category'))}
 	{if {$sendynews.list|count_characters} > 1}
 		<div id="sendy_newsletter" class="">
-			<span id="newsletter_span1" class="newsletter_element"><img src="{$modules_dir}sendynewsletter/img/{$lang_iso}/newsletter-signup-products-img.jpg"></span>
-			<span id="newsletter_span2" class="newsletter_element"><img height="150" width="286" src="{$modules_dir}sendynewsletter/img/{$lang_iso}/newsletter-signup-subscribe-img-retina.png"></span>
-			<span id="newsletter_span3" class="newsletter_element"><img src="{$modules_dir}sendynewsletter/img/{$lang_iso}/newsletter-signup-mail-img.jpg"></span>
+			<span id="newsletter_span1" class="newsletter_element"><img src="{$urls.base_url}modules/sendynewsletter/img/{$language.iso_code}/newsletter-signup-products-img.jpg"></span>
+			<span id="newsletter_span2" class="newsletter_element"><img height="150" width="286" src="{$urls.base_url}modules/sendynewsletter/img/{$language.iso_code}/newsletter-signup-subscribe-img-retina.png"></span>
+			<span id="newsletter_span3" class="newsletter_element"><img src="{$urls.base_url}modules/sendynewsletter/img/{$language.iso_code}/newsletter-signup-mail-img.jpg"></span>
 			
 			<span class="newsletter_element">
 				<form id="sendynewsletter_form" style="display:inline;" action="{$sendynews.url}/subscribe" method="post">
