@@ -13,7 +13,7 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-class SendyNewsletter extends Module
+class SendyIntegration extends Module
 {
     private $installation;
     private $setup;
@@ -21,10 +21,10 @@ class SendyNewsletter extends Module
 
     public function __construct()
     {
-        $this->name = 'sendynewsletter';
+        $this->name = 'sendyintegration';
         $this->tab = 'front_office_features';
         $this->version = '1.2';
-        $this->author = '';
+        $this->author = 'Givensa';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = array('min' => '1.5', 'max' => '1.7.99');
 
@@ -115,9 +115,9 @@ class SendyNewsletter extends Module
         ));
         if ($this->setup) {
             if (_PS_VERSION_ >= 1.7) {
-                return $this->display(__FILE__, 'sendynewsletter2.tpl');
+                return $this->display(__FILE__, 'sendyintegration2.tpl');
             } else {
-                return $this->display(__FILE__, 'sendynewsletter.tpl');
+                return $this->display(__FILE__, 'sendyintegration.tpl');
             }
             
         }
