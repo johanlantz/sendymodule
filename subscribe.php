@@ -19,7 +19,7 @@ else {
 	exit;
 }
 
-if ($hp && strlen($hp) > 0) {
+if ($xip && strlen($xip) > 0) {
 	exit;
 }
 

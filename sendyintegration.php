@@ -67,6 +67,7 @@ class SendyIntegration extends Module
         && $this->registerHook('displayFooter')
         && $this->registerHook('header')
         && $this->registerHook(array('actionCustomerAccountAdd'))
+        && Configuration::updateValue('SENDYNEWSLETTER_ACTIVE_ON_PAGES', "index, product, category")
         && Configuration::updateValue('SENDYNEWSLETTER_IP', false)
         && Configuration::updateValue('SENDYNEWSLETTER_IPVALUE', '')
         && Configuration::updateValue('SENDYNEWSLETTER_NAME', false)
@@ -85,6 +86,7 @@ class SendyIntegration extends Module
         }
 
         return parent::uninstall()
+        && Configuration::deleteByName('SENDYNEWSLETTER_ACTIVE_ON_PAGES')
         && Configuration::deleteByName('SENDYNEWSLETTER_INSTALLATION')
         && Configuration::deleteByName('SENDYNEWSLETTER_IP')
         && Configuration::deleteByName('SENDYNEWSLETTER_IPVALUE')
@@ -109,6 +111,7 @@ class SendyIntegration extends Module
             'ipfield' => Configuration::get('SENDYNEWSLETTER_IPVALUE'),
             'name' => (int) Configuration::get('SENDYNEWSLETTER_NAME'),
             'namereq' => (int) Configuration::get('SENDYNEWSLETTER_NAMEREQ'),
+            'activeOnPages' => Configuration::get('SENDYNEWSLETTER_ACTIVE_ON_PAGES')
         );
         $this->context->smarty->assign(array(
             'sendynews' => $sendy,
@@ -144,7 +147,8 @@ class SendyIntegration extends Module
             $name = (int) Tools::getValue('SENDYNEWSLETTER_NAME');
             $name_req = (int) Tools::getValue('SENDYNEWSLETTER_NAMEREQ');
             $respect_opt_in = (int) Tools::getValue('SENDYNEWSLETTER_RESPECT_USER_OPT_IN');
-
+            $active_on_pages = Tools::getValue('SENDYNEWSLETTER_ACTIVE_ON_PAGES');
+            
             if (!$installation || empty($installation) || !Validate::isAbsoluteUrl($installation)) {
                 $output .= $this->displayError($this->l('Invalid installation url'));
             }
@@ -169,7 +173,8 @@ class SendyIntegration extends Module
                 Configuration::updateValue('SENDYNEWSLETTER_IPVALUE', $ip_var);
                 Configuration::updateValue('SENDYNEWSLETTER_NAME', $name);
                 Configuration::updateValue('SENDYNEWSLETTER_NAMEREQ', $name_req);
-                Configuration::updateValue('SENDYNEWSLETTER_RESPECT_USER_OPT_IN', $respect_opt_in);
+                Configuration::updateValue('SENDYNEWSLETTER_RESPECT_USER_OPT_IN', $respect_opt_in);Configuration::updateValue('SENDYNEWSLETTER_RESPECT_USER_OPT_IN', $respect_opt_in);
+                Configuration::updateValue('SENDYNEWSLETTER_ACTIVE_ON_PAGES', $active_on_pages);
                 $output .= $this->displayConfirmation($this->l('Settings updated'));
             }
         }
@@ -196,6 +201,13 @@ class SendyIntegration extends Module
                     'desc' => $this->l('Url address of your sendy installation eg "http://your_sendy_installation"'),
                     'size' => 30,
                     'required' => true,
+                ),
+                array(
+                    'type' => 'text',
+                    'label' => $this->l('Newsletter pages'),
+                    'name' => 'SENDYNEWSLETTER_ACTIVE_ON_PAGES',
+                    'desc' => $this->l('Pages where to show newsletter module'),
+                    'size' => 50,
                 ),
                 array(
                     'type' => 'radio',
@@ -351,7 +363,8 @@ class SendyIntegration extends Module
             'SENDYNEWSLETTER_IPVALUE' => Configuration::get('SENDYNEWSLETTER_IPVALUE'),
             'SENDYNEWSLETTER_NAME' => Configuration::get('SENDYNEWSLETTER_NAME'),
             'SENDYNEWSLETTER_NAMEREQ' => Configuration::get('SENDYNEWSLETTER_NAMEREQ'),
-            'SENDYNEWSLETTER_RESPECT_USER_OPT_IN' => Configuration::get('SENDYNEWSLETTER_RESPECT_USER_OPT_IN')
+            'SENDYNEWSLETTER_RESPECT_USER_OPT_IN' => Configuration::get('SENDYNEWSLETTER_RESPECT_USER_OPT_IN'),
+            'SENDYNEWSLETTER_ACTIVE_ON_PAGES' => Configuration::get('SENDYNEWSLETTER_ACTIVE_ON_PAGES')
         );
 
         //Load existing values for the country specific newsletter fields

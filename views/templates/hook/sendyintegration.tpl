@@ -1,5 +1,5 @@
-<!-- Sendy Newsletter module-->
-{if (($page_name =='index') ||  ($page_name =='product') ||  ($page_name =='category')) }
+<!-- Sendy Integration module-->
+{if ($sendynews.activeOnPages|strstr:$page_name) }
 	{if {$sendynews.list|count_characters} > 1}
 		<div id="sendy_newsletter" class="">
 			<span id="newsletter_span1" class="newsletter_element"><img src="{$modules_dir}sendynewsletter/img/{$lang_iso}/newsletter-signup-products-img.jpg"></span>
@@ -13,11 +13,11 @@
 					{if $sendynews.name == 1}
 					<input id="sendynewsletter_name" type="text" name="name" placeholder="{l s='Your name' mod='sendynewsletter'}" {if $sendynews.namereq == 1}data-req="true" required{/if}/>
 					{/if}
-
-					{* Add honeypot support for sendy 3.x *}
+					
+					{* Add honeypot *}
 					<div style="display:none;">
-						<label for="hp">HP</label><br/>
-						<input type="text" name="hp" id="hp"/>
+						<label for="xip">xip</label><br/>
+						<input type="text" name="xip" id="xip"/>
 					</div>
 
 					<input id="sendynewsletter_email" type="text" name="email" class="account_input" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="{l s='Your email address' mod='sendynewsletter'}" required/>
@@ -32,4 +32,4 @@
 		</div>
 	{/if}
 {/if}
-<!-- /Sendy Newsletter module-->
+<!-- /Sendy Integration module-->
