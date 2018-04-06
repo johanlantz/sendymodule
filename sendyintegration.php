@@ -63,8 +63,7 @@ class SendyIntegration extends Module
         }
 
         return parent::install()
-        && $this->registerHook('displayMyPreFooter')
-        && $this->registerHook('displayFooter')
+        && $this->registerHook('displayFooterBefore')
         && $this->registerHook('header')
         && $this->registerHook(array('actionCustomerAccountAdd'))
         && Configuration::updateValue('SENDYNEWSLETTER_ACTIVE_ON_PAGES', "index, product, category")
@@ -95,14 +94,8 @@ class SendyIntegration extends Module
         && Configuration::deleteByName('SENDYNEWSLETTER_RESPECT_USER_OPT_IN');
     }
 
-    public function hookDisplayFooter($params)
+    public function hookDisplayFooterBefore($params)
     {
-        return $this->hookDisplayMyPreFooter($params);
-    }
-
-    public function hookDisplayMyPreFooter($params)
-    {
-        //$this->context->controller->addJS($this->_path.'views/js/sendynewsletter.js');
         $sendy = array(
             'url' => Configuration::get('SENDYNEWSLETTER_INSTALLATION'),
             'list' => Configuration::get('SENDYNEWSLETTER_COUNTRY_' . $this->context->language->iso_code),
@@ -121,8 +114,7 @@ class SendyIntegration extends Module
                 return $this->display(__FILE__, 'sendyintegration2.tpl');
             } else {
                 return $this->display(__FILE__, 'sendyintegration.tpl');
-            }
-            
+            } 
         }
     }
 
