@@ -71,7 +71,8 @@ class SendyIntegration extends Module
         && Configuration::updateValue('SENDYNEWSLETTER_IPVALUE', '')
         && Configuration::updateValue('SENDYNEWSLETTER_NAME', false)
         && Configuration::updateValue('SENDYNEWSLETTER_NAMEREQ', false)
-        && Configuration::updateValue('SENDYNEWSLETTER_RESPECT_OPT_IN', true);
+        && Configuration::updateValue('SENDYNEWSLETTER_RESPECT_OPT_IN', true)
+        && Configuration::updateValue('SENDYNEWSLETTER_SHOW_INFO', false);
     }
 
     public function uninstall()
@@ -91,7 +92,8 @@ class SendyIntegration extends Module
         && Configuration::deleteByName('SENDYNEWSLETTER_IPVALUE')
         && Configuration::deleteByName('SENDYNEWSLETTER_NAME')
         && Configuration::deleteByName('SENDYNEWSLETTER_NAMEREQ')
-        && Configuration::deleteByName('SENDYNEWSLETTER_RESPECT_OPT_IN');
+        && Configuration::deleteByName('SENDYNEWSLETTER_RESPECT_OPT_IN')
+        && Configuration::deleteByName('SENDYNEWSLETTER_SHOW_INFO');
     }
 
     public function hookDisplayFooterBefore($params)
@@ -104,7 +106,8 @@ class SendyIntegration extends Module
             'ipfield' => Configuration::get('SENDYNEWSLETTER_IPVALUE'),
             'name' => (int) Configuration::get('SENDYNEWSLETTER_NAME'),
             'namereq' => (int) Configuration::get('SENDYNEWSLETTER_NAMEREQ'),
-            'activeOnPages' => Configuration::get('SENDYNEWSLETTER_ACTIVE_ON_PAGES')
+            'activeOnPages' => Configuration::get('SENDYNEWSLETTER_ACTIVE_ON_PAGES'),
+            'showInfo' => Configuration::get('SENDYNEWSLETTER_SHOW_INFO')
         );
         $this->context->smarty->assign(array(
             'sendynews' => $sendy,
@@ -140,6 +143,7 @@ class SendyIntegration extends Module
             $name_req = (int) Tools::getValue('SENDYNEWSLETTER_NAMEREQ');
             $respect_opt_in = (int) Tools::getValue('SENDYNEWSLETTER_RESPECT_OPT_IN');
             $active_on_pages = Tools::getValue('SENDYNEWSLETTER_ACTIVE_ON_PAGES');
+            $show_info = Tools::getValue('SENDYNEWSLETTER_SHOW_INFO');
             
             if (!$installation || empty($installation) || !Validate::isAbsoluteUrl($installation)) {
                 $output .= $this->displayError($this->l('Invalid installation url'));
@@ -167,6 +171,7 @@ class SendyIntegration extends Module
                 Configuration::updateValue('SENDYNEWSLETTER_NAMEREQ', $name_req);
                 Configuration::updateValue('SENDYNEWSLETTER_RESPECT_OPT_IN', $respect_opt_in);Configuration::updateValue('SENDYNEWSLETTER_RESPECT_OPT_IN', $respect_opt_in);
                 Configuration::updateValue('SENDYNEWSLETTER_ACTIVE_ON_PAGES', $active_on_pages);
+                Configuration::updateValue('SENDYNEWSLETTER_SHOW_INFO', $show_info);
                 $output .= $this->displayConfirmation($this->l('Settings updated'));
             }
         }
@@ -200,6 +205,26 @@ class SendyIntegration extends Module
                     'name' => 'SENDYNEWSLETTER_ACTIVE_ON_PAGES',
                     'desc' => $this->l('Pages where to show newsletter module'),
                     'size' => 50,
+                ),
+                array(
+                    'type' => 'radio',
+                    'label' => $this->l('Show unsubscribe info'),
+                    'name' => 'SENDYNEWSLETTER_SHOW_INFO',
+                    'desc' => $this->l('Show tooltip icon about unregistration, could be useful for GDPR'),
+                    'is_bool' => true,
+                    'class' => 't',
+                    'values' => array(
+                        array(
+                            'id' => 'info_on',
+                            'value' => 1,
+                            'label' => $this->l('Enabled'),
+                        ),
+                        array(
+                            'id' => 'info_off',
+                            'value' => 0,
+                            'label' => $this->l('Disabled'),
+                        ),
+                    ),
                 ),
                 array(
                     'type' => 'radio',
@@ -356,7 +381,8 @@ class SendyIntegration extends Module
             'SENDYNEWSLETTER_NAME' => Configuration::get('SENDYNEWSLETTER_NAME'),
             'SENDYNEWSLETTER_NAMEREQ' => Configuration::get('SENDYNEWSLETTER_NAMEREQ'),
             'SENDYNEWSLETTER_RESPECT_OPT_IN' => Configuration::get('SENDYNEWSLETTER_RESPECT_OPT_IN'),
-            'SENDYNEWSLETTER_ACTIVE_ON_PAGES' => Configuration::get('SENDYNEWSLETTER_ACTIVE_ON_PAGES')
+            'SENDYNEWSLETTER_ACTIVE_ON_PAGES' => Configuration::get('SENDYNEWSLETTER_ACTIVE_ON_PAGES'),
+            'SENDYNEWSLETTER_SHOW_INFO' => Configuration::get('SENDYNEWSLETTER_SHOW_INFO')
         );
 
         //Load existing values for the country specific newsletter fields
