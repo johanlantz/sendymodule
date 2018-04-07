@@ -23,6 +23,17 @@
 					<input id="sendynewsletter_email" type="text" name="email" class="account_input" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="{l s='Your email address' mod='sendynewsletter'}" required/>
 					<input type="submit" value="ok" class="button_large"  name="submitNewsletter" />
 				</form>
+
+				{if $sendynews.showInfo}
+					{* Bootstrap tooltip for GDPR *}
+					<script>
+						$(document).ready(function(){
+							$('[data-toggle="tooltip"]').tooltip(); 
+						});
+					</script>
+					<i class="icon icon-info-circle" data-toggle="tooltip" title="{l s='You can unsubscribe at any time'}"></i>
+					<script type="text/javascript">(function () { $('[type=data-toggle]').tooltip(); }());</script>
+				{/if}
 				<p id="sn_error" class="sn_warning">{l s='There was an error please try again.' mod='sendynewsletter'}</p>
 				<p id="sn_email" class="sn_warning">{l s='Invalid email address.' mod='sendynewsletter'}</p>
 				<p id="sn_subscribed" class="sn_warning">{l s='Already subscribed.' mod='sendynewsletter'}</p>
