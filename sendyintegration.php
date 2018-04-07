@@ -66,6 +66,7 @@ class SendyIntegration extends Module
         && $this->registerHook('displayFooterBefore')
         && $this->registerHook('header')
         && $this->registerHook('actionCustomerAccountAdd')
+        && $this->registerHook('actionCustomerAccountUpdate')
         && Configuration::updateValue('SENDYNEWSLETTER_ACTIVE_ON_PAGES', "index, product, category")
         && Configuration::updateValue('SENDYNEWSLETTER_IP', false)
         && Configuration::updateValue('SENDYNEWSLETTER_IPVALUE', '')
@@ -86,6 +87,10 @@ class SendyIntegration extends Module
         }
 
         return parent::uninstall()
+        && $this->unregisterHook('displayFooterBefore')
+        && $this->unregisterHook('header')
+        && $this->unregisterHook('actionCustomerAccountAdd')
+        && $this->unregisterHook('actionCustomerAccountUpdate')
         && Configuration::deleteByName('SENDYNEWSLETTER_ACTIVE_ON_PAGES')
         && Configuration::deleteByName('SENDYNEWSLETTER_INSTALLATION')
         && Configuration::deleteByName('SENDYNEWSLETTER_IP')
@@ -442,4 +447,44 @@ class SendyIntegration extends Module
         curl_exec($ch);
         return true;
     }
+
+    public function hookActionCustomerAccountUpdate($params)
+    {
+        if(!$params['customer']->newsletter) {
+			$customerLang = Language::getIsoById($params['customer']->id_lang);
+            $url = Configuration::get('SENDYNEWSLETTER_INSTALLATION') . '/unsubscribe';
+            $list = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $customerLang);
+            $data = array(
+                'list'		=> $list,
+                'email' 	=> $params['customer']->email,
+                'boolean'	=> 'true'
+            );
+
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+
+            curl_exec($ch);
+            return true;
+        } else {
+            $customerLang = Language::getIsoById($params['customer']->id_lang);
+            $url = Configuration::get('SENDYNEWSLETTER_INSTALLATION') . '/subscribe';
+            $list = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $customerLang);
+            $data = array(
+                'list'		=> $list,
+                'email' 	=> $params['customer']->email,
+                'boolean'	=> 'true'
+            );
+
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+
+            curl_exec($ch);
+            return true;
+        }
+    }
 }
+

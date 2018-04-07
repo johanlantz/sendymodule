@@ -34,7 +34,7 @@
 							$('[data-toggle="tooltip"]').tooltip(); 
 						});
 					</script>
-					<i class="icon icon-info-circle" data-toggle="tooltip" title="{l s='You can unsubscribe at any time'}"></i>
+					<i class="icon icon-info-circle" data-toggle="tooltip" title="{l s='You can unsubscribe at any time' mod='sendyintegration'}"></i>
 					<script type="text/javascript">(function () { $('[type=data-toggle]').tooltip(); }());</script>
 				{/if}
 
