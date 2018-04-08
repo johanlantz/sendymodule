@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<link rel="Shortcut Icon" type="image/ico" href="img/favicon.png">
+		<script type="text/javascript">
+			function getParameterByName(name) {
+				var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+				return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+			}
+			var delay_in_seconds = 3;
+			var url_to_redirect = getParameterByName("redirUrl");
+			
+			setTimeout(redirect, delay_in_seconds*1000);
+			function redirect()
+			{
+				window.location.href = url_to_redirect;
+			}
+		</script>
+		<title>Subscribed</title>
+	</head>
+	<style type="text/css">
+		body{
+			background: #ffffff;
+			font-family: Helvetica, Arial;
+		}
+		#wrapper 
+		{
+			background: #f2f2f2;
+			
+			width: 300px;
+			height: 114px;
+			
+			margin: -140px 0 0 -150px;
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			-webkit-border-radius: 5px;
+			-moz-border-radius: 5px;
+			border-radius: 5px;
+		}
+		p{
+			font-size: 12px;
+			text-align: center;
+			color: #5C5C5C;
+		}
+		h2{
+			font-weight: normal;
+			text-align: center;
+		}
+		a{
+			color: #000;
+		}
+		a:hover{
+			text-decoration: none;
+		}
+	</style>
+	<body>
+		<div id="wrapper">
+			<h2>¡Gracias por suscribirte a nuestro newsletter!</h2>
+			<p>En unos segundos seras redireccionado.</p>
+		</div>
+	</body>
+</html>
