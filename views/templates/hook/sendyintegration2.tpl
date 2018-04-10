@@ -2,9 +2,9 @@
 {if ($sendynews.activeOnPages|strstr:$page.page_name) }
 	{if {$sendynews.list|count_characters} > 1}
 		<div id="sendy_newsletter" class="">
-			<span id="newsletter_span1" class="newsletter_element"><img src="{$urls.base_url}modules/sendyintegration/img/{$language.iso_code}/newsletter-signup-products-img.jpg"></span>
-			<span id="newsletter_span2" class="newsletter_element"><img height="150" width="286" src="{$urls.base_url}modules/sendyintegration/img/{$language.iso_code}/newsletter-signup-subscribe-img-retina.png"></span>
-			<span id="newsletter_span3" class="newsletter_element"><img src="{$urls.base_url}modules/sendyintegration/img/{$language.iso_code}/newsletter-signup-mail-img.jpg"></span>
+			<span id="newsletter_span1" class="newsletter_element"><img height="150" width="188" src="{$urls.base_url}modules/sendyintegration/img/{$language.iso_code}/sendy-newsletter-signup-products.jpg"></span>
+			<span id="newsletter_span2" class="newsletter_element"><img height="150" width="286" src="{$urls.base_url}modules/sendyintegration/img/{$language.iso_code}/sendy-newsletter-signup-subscribe.png"></span>
+			<span id="newsletter_span3" class="newsletter_element"><img height="150" width="229" src="{$urls.base_url}modules/sendyintegration/img/{$language.iso_code}/sendy-newsletter-signup-mail.png"></span>
 			
 			<i class="icon icon-question-circle" data-toggle="tooltip" title="Blabla here's my info"></i>
 			<script type="text/javascript">(function () { $('[type=data-toggle]').tooltip(); }());</script>
