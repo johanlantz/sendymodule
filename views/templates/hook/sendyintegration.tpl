@@ -2,9 +2,9 @@
 {if ($sendynews.activeOnPages|strstr:$page_name) }
 	{if {$sendynews.list|count_characters} > 1}
 		<div id="sendy_newsletter" class="">
-			<span id="newsletter_span1" class="newsletter_element"><img src="{$modules_dir}sendyintegration/img/{$lang_iso}/sendy-newsletter-signup-products.jpg"></span>
+			<span id="newsletter_span1" class="newsletter_element"><img height="150" width="188" src="{$modules_dir}sendyintegration/img/sendy-newsletter-signup-products.jpg"></span>
 			<span id="newsletter_span2" class="newsletter_element"><img height="150" width="286" src="{$modules_dir}sendyintegration/img/{$lang_iso}/sendy-newsletter-signup-subscribe.png"></span>
-			<span id="newsletter_span3" class="newsletter_element"><img src="{$modules_dir}sendyintegration/img/{$lang_iso}/sendy-newsletter-signup-mail.png"></span>
+			<span id="newsletter_span3" class="newsletter_element"><img height="150" width="229" src="{$modules_dir}sendyintegration/img/sendy-newsletter-signup-mail.png"></span>
 			
 			<span class="newsletter_element">
 				<form id="sendynewsletter_form" style="display:inline;" action="{$sendynews.url}/subscribe" method="post">

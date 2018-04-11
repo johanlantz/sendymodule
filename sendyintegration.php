@@ -23,7 +23,7 @@ class SendyIntegration extends Module
     {
         $this->name = 'sendyintegration';
         $this->tab = 'front_office_features';
-        $this->version = '1.2';
+        $this->version = '1.3';
         $this->author = 'Givensa';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = array('min' => '1.5', 'max' => '1.7.99');
@@ -56,10 +56,13 @@ class SendyIntegration extends Module
 
         foreach ($this->availableLanguages as $lang) {
             Configuration::updateValue('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'], "");
-        }
-        
-        foreach ($this->availableLanguages as $lang) {
             Configuration::updateValue('SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code'], "");
+
+            //Create language dirs and copy default subscribe image as placeholders
+            if(!is_dir(__DIR__ . "/img/" . $lang['iso_code'])){
+                mkdir(__DIR__ . "/img/" . $lang['iso_code'], 0755, true);
+                copy(__DIR__ . "/img/en/sendy-newsletter-signup-subscribe.png", __DIR__ . "/img/" . $lang['iso_code'] . "/sendy-newsletter-signup-subscribe.png");
+            }
         }
 
         return parent::install()
@@ -80,9 +83,6 @@ class SendyIntegration extends Module
     {
         foreach ($this->availableLanguages as $lang) {
             Configuration::deleteByName('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code']);
-        }
-
-        foreach ($this->availableLanguages as $lang) {
             Configuration::deleteByName('SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code']);
         }
 
