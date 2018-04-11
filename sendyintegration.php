@@ -215,7 +215,7 @@ class SendyIntegration extends Module
                     'type' => 'radio',
                     'label' => $this->l('Show unsubscribe info'),
                     'name' => 'SENDYNEWSLETTER_SHOW_INFO',
-                    'desc' => $this->l('Show tooltip icon about unregistration, could be useful for GDPR'),
+                    'desc' => $this->l('Show tooltip icon about unregistration, could be useful for GDPR (only if your theme has bootstrap)'),
                     'is_bool' => true,
                     'class' => 't',
                     'values' => array(
