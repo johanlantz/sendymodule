@@ -62,6 +62,7 @@ class SendyIntegration extends Module
             if(!is_dir(__DIR__ . "/img/" . $lang['iso_code'])){
                 mkdir(__DIR__ . "/img/" . $lang['iso_code'], 0755, true);
                 copy(__DIR__ . "/img/en/sendy-newsletter-signup-subscribe.png", __DIR__ . "/img/" . $lang['iso_code'] . "/sendy-newsletter-signup-subscribe.png");
+                copy(__DIR__ . "/img/en/sendy-newsletter-signup-subscribe2x.png", __DIR__ . "/img/" . $lang['iso_code'] . "/sendy-newsletter-signup-subscribe2x.png");
             }
         }
 
@@ -102,7 +103,7 @@ class SendyIntegration extends Module
     }
 
     public function hookDisplayFooterBefore($params)
-    {
+    {   
         $sendy = array(
             'url' => Configuration::get('SENDYNEWSLETTER_INSTALLATION'),
             'list' => Configuration::get('SENDYNEWSLETTER_COUNTRY_' . $this->context->language->iso_code),
@@ -134,6 +135,20 @@ class SendyIntegration extends Module
     public function hookDisplayHeader($params)
     {
         $this->context->controller->addCSS($this->_path . 'views/css/sendynewsletter.css', 'all');
+    }
+
+    public function processSyncCustomersForm()
+    {
+        // This is a little bit unusual, since each input is a submit button, the name is always the name of the whole form, 
+        // not the name of an individual element such as iso_lang that you would expect. This is since there is no explicit
+        // submit button for the whole form
+        if (Tools::isSubmit('sendy_integration_customers_sync_form'))
+        {
+            $iso_of_lang_to_sync = Tools::getValue("sendy_integration_customers_sync_form");
+            $this->syncCustomers($iso_of_lang_to_sync);
+            return true;
+        }
+        return false;
     }
 
     public function getContent()
@@ -174,14 +189,23 @@ class SendyIntegration extends Module
                 Configuration::updateValue('SENDYNEWSLETTER_IPVALUE', $ip_var);
                 Configuration::updateValue('SENDYNEWSLETTER_NAME', $name);
                 Configuration::updateValue('SENDYNEWSLETTER_NAMEREQ', $name_req);
-                Configuration::updateValue('SENDYNEWSLETTER_RESPECT_OPT_IN', $respect_opt_in);Configuration::updateValue('SENDYNEWSLETTER_RESPECT_OPT_IN', $respect_opt_in);
+                Configuration::updateValue('SENDYNEWSLETTER_RESPECT_OPT_IN', $respect_opt_in);
                 Configuration::updateValue('SENDYNEWSLETTER_ACTIVE_ON_PAGES', $active_on_pages);
                 Configuration::updateValue('SENDYNEWSLETTER_SHOW_INFO', $show_info);
                 $output .= $this->displayConfirmation($this->l('Settings updated'));
             }
         }
 
-        return $output . $this->displayForm();
+        $sendyBack = array(         
+            'availableLanguages' => $this->availableLanguages
+        );
+        $this->context->smarty->assign(array(
+            'sendyBack' => $sendyBack,
+        ));
+
+        $adminSyncForm = $this->display(__DIR__, '/views/templates/admin/admin.tpl');
+        $output .= $this->processSyncCustomersForm() ? $this->displayConfirmation($this->l('List synchronized')) : "";
+        return $output . $this->displayForm() . $adminSyncForm;
     }
 
     public function displayForm()
@@ -485,6 +509,45 @@ class SendyIntegration extends Module
             curl_exec($ch);
             return true;
         }
+    }
+
+    public function syncCustomers($iso_lang)
+    {
+        $respect_opt_in = (bool) Configuration::get('SENDYNEWSLETTER_RESPECT_OPT_IN');
+        $url = Configuration::get('SENDYNEWSLETTER_INSTALLATION') . '/subscribe';
+        $list = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $iso_lang);
+        $id_lang = Language::getIdByIso($iso_lang);
+        $sql = 'SELECT firstname, email, newsletter FROM '._DB_PREFIX_.'customer WHERE id_lang=' . $id_lang ;
+        
+        if ($results = Db::getInstance()->ExecuteS($sql)) {
+            foreach ($results as $row) {
+                if ((int)$row['newsletter'] == 0 && $respect_opt_in) {
+                    echo ("Skipping " . $row['email'] . " since not opt-in to newsletter");
+                    continue;
+                }
+                $this->runCurlOperation($url, $list, $row['email'], $row['firstname']);
+            }
+        }
+    }
+
+    private function runCurlOperation($url, $list, $email, $name="") {
+        
+        $data = array(
+            'list'		=> $list,
+            'email' 	=> $email,
+            'boolean'	=> 'true'
+        );
+
+        if (strlen($name) > 0) {
+            $data['name'] = $name;
+        }
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+
+        curl_exec($ch);
     }
 }
 

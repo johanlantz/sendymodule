@@ -1,4 +1,4 @@
-$(document).ready(function() {
+/*$(document).ready(function() {
     $('form#sendynewsletter_form').submit(function() {
         var name = $('#sendynewsletter_name').attr('value');
         if (name != undefined) {
@@ -41,4 +41,4 @@ $(document).ready(function() {
         });
         return false;
     });
-});
+});*/
