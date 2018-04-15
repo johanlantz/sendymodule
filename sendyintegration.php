@@ -23,7 +23,7 @@ class SendyIntegration extends Module
     {
         $this->name = 'sendyintegration';
         $this->tab = 'front_office_features';
-        $this->version = '1.3';
+        $this->version = '1.4';
         $this->author = 'Givensa';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = array('min' => '1.5', 'max' => '1.7.99');
@@ -295,7 +295,7 @@ class SendyIntegration extends Module
                     'type' => 'radio',
                     'label' => $this->l('Delete on unsubscribe'),
                     'name' => 'SENDYNEWSLETTER_DELETE_ON_UNSUB',
-                    'desc' => $this->l('Delete user information in Sendy on unsubscribe.'),
+                    'desc' => $this->l('Delete user information in Sendy on unsubscribe. You must assign the API key below for this to work.'),
                     'is_bool' => true,
                     'class' => 't',
                     'values' => array(
