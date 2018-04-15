@@ -74,11 +74,13 @@ class SendyIntegration extends Module
         && $this->registerHook('actionCustomerAccountAdd')
         && $this->registerHook('actionCustomerAccountUpdate')
         && Configuration::updateValue('SENDYNEWSLETTER_ACTIVE_ON_PAGES', "index, product, category")
+        && Configuration::updateValue('SENDYNEWSLETTER_API_KEY', "")
         && Configuration::updateValue('SENDYNEWSLETTER_IP', true)
+        && Configuration::updateValue('SENDYNEWSLETTER_DELETE_ON_UNSUB', false)
         && Configuration::updateValue('SENDYNEWSLETTER_NAME', false)
         && Configuration::updateValue('SENDYNEWSLETTER_NAMEREQ', false)
         && Configuration::updateValue('SENDYNEWSLETTER_RESPECT_OPT_IN', true)
-        && Configuration::updateValue('SENDYNEWSLETTER_SHOW_INFO', false);
+        && Configuration::updateValue('SENDYNEWSLETTER_SHOW_INFO', false); 
     }
 
     public function uninstall()
@@ -94,8 +96,10 @@ class SendyIntegration extends Module
         && $this->unregisterHook('actionCustomerAccountAdd')
         && $this->unregisterHook('actionCustomerAccountUpdate')
         && Configuration::deleteByName('SENDYNEWSLETTER_ACTIVE_ON_PAGES')
+        && Configuration::deleteByName('SENDYNEWSLETTER_API_KEY')
         && Configuration::deleteByName('SENDYNEWSLETTER_INSTALLATION')
         && Configuration::deleteByName('SENDYNEWSLETTER_IP')
+        && Configuration::deleteByName('SENDYNEWSLETTER_DELETE_ON_UNSUB')
         && Configuration::deleteByName('SENDYNEWSLETTER_NAME')
         && Configuration::deleteByName('SENDYNEWSLETTER_NAMEREQ')
         && Configuration::deleteByName('SENDYNEWSLETTER_RESPECT_OPT_IN')
@@ -172,12 +176,14 @@ class SendyIntegration extends Module
         if (Tools::isSubmit('submit' . $this->name)) {
             $installation = Tools::getValue('SENDYNEWSLETTER_INSTALLATION');
             $ip = (int) Tools::getValue('SENDYNEWSLETTER_IP');
+            $delete_on_unsubscribe = Tools::getValue('SENDYNEWSLETTER_DELETE_ON_UNSUB');
             $name = (int) Tools::getValue('SENDYNEWSLETTER_NAME');
             $name_req = (int) Tools::getValue('SENDYNEWSLETTER_NAMEREQ');
             $respect_opt_in = (int) Tools::getValue('SENDYNEWSLETTER_RESPECT_OPT_IN');
             $active_on_pages = Tools::getValue('SENDYNEWSLETTER_ACTIVE_ON_PAGES');
             $show_info = Tools::getValue('SENDYNEWSLETTER_SHOW_INFO');
-            
+            $sendy_api_key = Tools::getValue('SENDYNEWSLETTER_API_KEY');
+
             if (!$installation || empty($installation) || !Validate::isAbsoluteUrl($installation)) {
                 $output .= $this->displayError($this->l('Invalid installation url'));
             }
@@ -193,6 +199,8 @@ class SendyIntegration extends Module
 
                 Configuration::updateValue('SENDYNEWSLETTER_INSTALLATION', $installation);
                 Configuration::updateValue('SENDYNEWSLETTER_IP', $ip);
+                Configuration::updateValue('SENDYNEWSLETTER_DELETE_ON_UNSUB', $delete_on_unsubscribe);
+                Configuration::updateValue('SENDYNEWSLETTER_API_KEY', $sendy_api_key);
                 Configuration::updateValue('SENDYNEWSLETTER_NAME', $name);
                 Configuration::updateValue('SENDYNEWSLETTER_NAMEREQ', $name_req);
                 Configuration::updateValue('SENDYNEWSLETTER_RESPECT_OPT_IN', $respect_opt_in);
@@ -282,6 +290,34 @@ class SendyIntegration extends Module
                             'label' => $this->l('Disabled'),
                         ),
                     ),
+                ),
+                array(
+                    'type' => 'radio',
+                    'label' => $this->l('Delete on unsubscribe'),
+                    'name' => 'SENDYNEWSLETTER_DELETE_ON_UNSUB',
+                    'desc' => $this->l('Delete user information in Sendy on unsubscribe.'),
+                    'is_bool' => true,
+                    'class' => 't',
+                    'values' => array(
+                        array(
+                            'id' => 'dou_on',
+                            'value' => 1,
+                            'label' => $this->l('Enabled'),
+                        ),
+                        array(
+                            'id' => 'dou_off',
+                            'value' => 0,
+                            'label' => $this->l('Disabled'),
+                        ),
+                    ),
+                ),
+                array(
+                    'type' => 'text',
+                    'label' => $this->l('Sendy API key'),
+                    'name' => 'SENDYNEWSLETTER_API_KEY',
+                    'desc' => $this->l('Sendy API key. ONLY needed if you have activated Delete on unsubscribe above.'),
+                    'size' => 30,
+                    'required' => false,
                 ),
                 array(
                     'type' => 'radio',
@@ -407,6 +443,8 @@ class SendyIntegration extends Module
         $helper->fields_value = array(
             'SENDYNEWSLETTER_INSTALLATION' => Configuration::get('SENDYNEWSLETTER_INSTALLATION'),
             'SENDYNEWSLETTER_IP' => Configuration::get('SENDYNEWSLETTER_IP'),
+            'SENDYNEWSLETTER_DELETE_ON_UNSUB' => Configuration::get('SENDYNEWSLETTER_DELETE_ON_UNSUB'),
+            'SENDYNEWSLETTER_API_KEY' => Configuration::get('SENDYNEWSLETTER_API_KEY'),
             'SENDYNEWSLETTER_NAME' => Configuration::get('SENDYNEWSLETTER_NAME'),
             'SENDYNEWSLETTER_NAMEREQ' => Configuration::get('SENDYNEWSLETTER_NAMEREQ'),
             'SENDYNEWSLETTER_RESPECT_OPT_IN' => Configuration::get('SENDYNEWSLETTER_RESPECT_OPT_IN'),
@@ -459,12 +497,19 @@ class SendyIntegration extends Module
         $url = Configuration::get('SENDYNEWSLETTER_INSTALLATION');
         $customerLang = Language::getIsoById($params['customer']->id_lang);
         $list = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $customerLang);
+        $api_key = ""; 
         if(!$params['customer']->newsletter) {
-            $url .= '/unsubscribe';
+            $delete_on_unsubscribe = Configuration::get('SENDYNEWSLETTER_DELETE_ON_UNSUB');
+            if ($delete_on_unsubscribe) {
+                $url .= '/api/subscribers/delete.php';
+                $api_key = Configuration::get('SENDYNEWSLETTER_API_KEY');
+            } else {
+                $url .= '/unsubscribe';
+            }
         } else {
-            $url .=  '/subscribe';
+            $url .=  '/subscribe';       
         }
-        $this->runCurlOperation($url, $list, $params['customer']->email, $name="", $params['customer']->ip_registration_newsletter);
+        $this->runCurlOperation($url, $list, $params['customer']->email, $name="", $params['customer']->ip_registration_newsletter, $api_key);
         return true;
     }
 
@@ -529,7 +574,7 @@ class SendyIntegration extends Module
         return "Synced " . $newsletter_sync_count . " Skipped: " . $newsletter_skip_count;
     }
 
-    private function runCurlOperation($url, $list, $email, $name="", $ip_registration_newsletter="na") {
+    private function runCurlOperation($url, $list, $email, $name="", $ip_registration_newsletter="na", $sendy_api_key="") {
         $store_ip = (int)Configuration::get('SENDYNEWSLETTER_IP');
 
         $data = array(
@@ -548,6 +593,11 @@ class SendyIntegration extends Module
 
         if (strlen($country) > 0) {
             $data["country"] = $country;
+        }
+
+        if (strlen($sendy_api_key) > 0) {
+            $data["api_key"] = $sendy_api_key;
+            $data["list_id"] = $list;  //delete uses list id
         }
 
         $ch = curl_init();
