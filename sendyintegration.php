@@ -488,7 +488,7 @@ class SendyIntegration extends Module
             return;
         }
 
-        $this->runCurlOperation($url, $list, $params['newCustomer']->email, $name=$params['newCustomer']->firstname, $_SERVER["REMOTE_ADDR"]);
+        $this->runCurlOperation($url, $list, $params['newCustomer']->email, $params['newCustomer']->firstname, $_SERVER["REMOTE_ADDR"], "", $params['newCustomer']->birthday);
         return true;
     }
 
@@ -509,7 +509,10 @@ class SendyIntegration extends Module
         } else {
             $url .=  '/subscribe';       
         }
-        $this->runCurlOperation($url, $list, $params['customer']->email, $name="", $params['customer']->ip_registration_newsletter, $api_key);
+
+        print_r( $params['customer']);
+        var_dump($params['customer']);
+        $this->runCurlOperation($url, $list, $params['customer']->email, $name="", $params['customer']->ip_registration_newsletter, $api_key, $params['customer']->birthday);
         return true;
     }
 
@@ -574,7 +577,7 @@ class SendyIntegration extends Module
         return "Synced " . $newsletter_sync_count . " Skipped: " . $newsletter_skip_count;
     }
 
-    private function runCurlOperation($url, $list, $email, $name="", $ip_registration_newsletter="na", $sendy_api_key="") {
+    private function runCurlOperation($url, $list, $email, $name="", $ip_registration_newsletter="na", $sendy_api_key="", $birthday="") {
         $store_ip = (int)Configuration::get('SENDYNEWSLETTER_IP');
 
         $data = array(
@@ -593,9 +596,13 @@ class SendyIntegration extends Module
 
         if (strlen($sendy_api_key) > 0) {
             $data["api_key"] = $sendy_api_key;
-            $data["list_id"] = $list;  //delete uses list id
+            $data["list_id"] = $list;  //delete uses list_id and not list
         }
 
+        if ($birthday && strlen($birthday) > 0) {
+            $data["birthday"] = $birthday;
+        }
+        
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_POST, 1);
