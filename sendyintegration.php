@@ -591,10 +591,6 @@ class SendyIntegration extends Module
             $data["ipaddress"] = $ip_registration_newsletter;
         }
 
-        if (strlen($country) > 0) {
-            $data["country"] = $country;
-        }
-
         if (strlen($sendy_api_key) > 0) {
             $data["api_key"] = $sendy_api_key;
             $data["list_id"] = $list;  //delete uses list id
