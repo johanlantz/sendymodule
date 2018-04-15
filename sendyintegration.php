@@ -144,8 +144,7 @@ class SendyIntegration extends Module
         if (Tools::isSubmit('sendy_integration_customers_sync_form'))
         {
             $iso_of_lang_to_sync = Tools::getValue("sendy_integration_customers_sync_form");
-            $this->syncCustomers($iso_of_lang_to_sync);
-            return $this->displayConfirmation($this->l('Customer list synchronized for language=') . $iso_of_lang_to_sync);
+            return $this->syncCustomers($iso_of_lang_to_sync);
         }
         return "";
     }
@@ -160,8 +159,8 @@ class SendyIntegration extends Module
             if (strlen($list_name) < 1) {
                 return $this->displayError($this->l('Invalid list name'));
             }
-            $newsletter_sync_count = $this->syncNewsletter($list_name);
-            return $this->displayConfirmation($this->l('Newsletter list synchronized for shop_id=') . $id_shop . ". " . $this->l('Active users synched =') . $newsletter_sync_count );
+            $result = $this->syncNewsletter($list_name);
+            return $this->displayConfirmation($this->l('Newsletter list synchronized for shop_id=') . $id_shop . ". " . $result );
         }
         return "";
     }
@@ -451,69 +450,22 @@ class SendyIntegration extends Module
             return;
         }
 
-        $data = array(
-            'list'		=> $list,
-            'email' 	=> $params['newCustomer']->email,
-            'boolean'	=> 'true'
-        );
-
-        $data['name'] = $params['newCustomer']->firstname;
-
-        if ($store_ip == 1) {
-            $data["ipaddress"] = $params['newCustomer']->ip_registration_newsletter;
-        }
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-
-        curl_exec($ch);
+        $this->runCurlOperation($url, $list, $params['newCustomer']->email, $name=$params['newCustomer']->firstname, $_SERVER["REMOTE_ADDR"]);
         return true;
     }
 
     public function hookActionCustomerAccountUpdate($params)
     {
+        $url = Configuration::get('SENDYNEWSLETTER_INSTALLATION');
+        $customerLang = Language::getIsoById($params['customer']->id_lang);
+        $list = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $customerLang);
         if(!$params['customer']->newsletter) {
-            $store_ip = (int)Configuration::get('SENDYNEWSLETTER_IP');
-            $customerLang = Language::getIsoById($params['customer']->id_lang);
-            $url = Configuration::get('SENDYNEWSLETTER_INSTALLATION') . '/unsubscribe';
-            $list = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $customerLang);
-            $data = array(
-                'list'		=> $list,
-                'email' 	=> $params['customer']->email,
-                'boolean'	=> 'true'
-            );
-
-            if ($store_ip == 1) {
-                $data["ipaddress"] = $params['customer']->ip_registration_newsletter;
-            }
-
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_POST, 1);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-
-            curl_exec($ch);
-            return true;
+            $url .= '/unsubscribe';
         } else {
-            $customerLang = Language::getIsoById($params['customer']->id_lang);
-            $url = Configuration::get('SENDYNEWSLETTER_INSTALLATION') . '/subscribe';
-            $list = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $customerLang);
-            $data = array(
-                'list'		=> $list,
-                'email' 	=> $params['customer']->email,
-                'boolean'	=> 'true'
-            );
-
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_POST, 1);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-
-            curl_exec($ch);
-            return true;
+            $url .=  '/subscribe';
         }
+        $this->runCurlOperation($url, $list, $params['customer']->email, $name="", $params['customer']->ip_registration_newsletter);
+        return true;
     }
 
     public function syncCustomers($iso_lang)
@@ -521,18 +473,28 @@ class SendyIntegration extends Module
         $respect_opt_in = (bool) Configuration::get('SENDYNEWSLETTER_RESPECT_OPT_IN');
         $url = Configuration::get('SENDYNEWSLETTER_INSTALLATION') . '/subscribe';
         $list = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $iso_lang);
+
+        if (!$list) {
+            return $this->displayError($this->l('Failed to sync customers. No list defined for language = ' . $iso_lang));
+        }
+
         $id_lang = Language::getIdByIso($iso_lang);
         $sql = 'SELECT firstname, email, newsletter, ip_registration_newsletter FROM '._DB_PREFIX_.'customer WHERE id_lang=' . $id_lang ;
         
+        $customer_sync_count = 0;
+        $customer_skip_count = 0;
         if ($results = Db::getInstance()->ExecuteS($sql)) {
             foreach ($results as $row) {
                 if ((int)$row['newsletter'] == 0 && $respect_opt_in) {
                     echo ("Skipping " . $row['email'] . " since not opt-in to newsletter");
+                    $customer_skip_count++;
                     continue;
                 }
+                $customer_sync_count++;
                 $this->runCurlOperation($url, $list, $row['email'], $row['firstname'], $row['ip_registration_newsletter']);
             }
         }
+        return $this->displayConfirmation($this->l('Customer list synchronized for language=') . $iso_lang . ". " . "Synced " . $customer_sync_count . " Skipped: " . $customer_skip_count);
     }
 
     public function syncNewsletter($list)
@@ -550,22 +512,24 @@ class SendyIntegration extends Module
         $sql = 'SELECT email, active, newsletter_date_add, ip_registration_newsletter FROM '._DB_PREFIX_.$newsletter_table_name . ' WHERE id_shop=' . $id_shop;
         
         $newsletter_sync_count = 0;
+        $newsletter_skip_count = 0;
         if ($results = Db::getInstance()->ExecuteS($sql)) {
             foreach ($results as $row) {
                 $active = $row['active'];
                 if (!$active) {
                     echo ("Skipping " . $row['email'] . " since not active to newsletter");
+                    $newsletter_skip_count++;
                     continue;
                 } else {
                     $newsletter_sync_count++;
                 }
-                $this->runCurlOperation($url, $list, $row['email'], "hej", $row['ip_registration_newsletter']);
+                $this->runCurlOperation($url, $list, $row['email'], "", $row['ip_registration_newsletter']);
             }
         }
-        return $newsletter_sync_count;
+        return "Synced " . $newsletter_sync_count . " Skipped: " . $newsletter_skip_count;
     }
 
-    private function runCurlOperation($url, $list, $email, $name="", $ip_registration_newsletter="na", $country="") {
+    private function runCurlOperation($url, $list, $email, $name="", $ip_registration_newsletter="na") {
         $store_ip = (int)Configuration::get('SENDYNEWSLETTER_IP');
 
         $data = array(

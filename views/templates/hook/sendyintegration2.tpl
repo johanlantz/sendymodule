@@ -10,7 +10,7 @@
 				<form id="sendynewsletter_form" style="display:inline;" action="{$sendynews.url}/subscribe" method="post">
 					<input type="hidden" id="sendynewsletter_list" name="list" value="{$sendynews.list}" />
 					{if $sendynews.ip == 1}
-						<input type="hidden" id="sendynewsletter_ip" name="ip_addr" value="{$sendynews.ipval}" />
+						<input type="hidden" id="sendynewsletter_ip" name="ipaddress" value="{$sendynews.ipval}" />
 					{/if}
 					{if $sendynews.name == 1}
 					<input id="sendynewsletter_name" type="text" name="name" placeholder="{l s='Your name' mod='sendynewsletter'}" {if $sendynews.namereq == 1}data-req="true" required{/if}/>
