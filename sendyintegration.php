@@ -33,6 +33,8 @@ class SendyIntegration extends Module
 
         $this->confirmUninstall = $this->l('Are you sure you want to uninstall?');
 
+        $this->sendy_ip_field = "ipaddress";
+
         if (Configuration::get('SENDYNEWSLETTER_INSTALLATION')) {
             $this->installation = Configuration::get('SENDYNEWSLETTER_INSTALLATION');
         }
@@ -72,8 +74,7 @@ class SendyIntegration extends Module
         && $this->registerHook('actionCustomerAccountAdd')
         && $this->registerHook('actionCustomerAccountUpdate')
         && Configuration::updateValue('SENDYNEWSLETTER_ACTIVE_ON_PAGES', "index, product, category")
-        && Configuration::updateValue('SENDYNEWSLETTER_IP', false)
-        && Configuration::updateValue('SENDYNEWSLETTER_IPVALUE', '')
+        && Configuration::updateValue('SENDYNEWSLETTER_IP', true)
         && Configuration::updateValue('SENDYNEWSLETTER_NAME', false)
         && Configuration::updateValue('SENDYNEWSLETTER_NAMEREQ', false)
         && Configuration::updateValue('SENDYNEWSLETTER_RESPECT_OPT_IN', true)
@@ -95,7 +96,6 @@ class SendyIntegration extends Module
         && Configuration::deleteByName('SENDYNEWSLETTER_ACTIVE_ON_PAGES')
         && Configuration::deleteByName('SENDYNEWSLETTER_INSTALLATION')
         && Configuration::deleteByName('SENDYNEWSLETTER_IP')
-        && Configuration::deleteByName('SENDYNEWSLETTER_IPVALUE')
         && Configuration::deleteByName('SENDYNEWSLETTER_NAME')
         && Configuration::deleteByName('SENDYNEWSLETTER_NAMEREQ')
         && Configuration::deleteByName('SENDYNEWSLETTER_RESPECT_OPT_IN')
@@ -109,7 +109,6 @@ class SendyIntegration extends Module
             'list' => Configuration::get('SENDYNEWSLETTER_COUNTRY_' . $this->context->language->iso_code),
             'ip' => (int) Configuration::get('SENDYNEWSLETTER_IP'),
             'ipval' => $_SERVER["REMOTE_ADDR"],
-            'ipfield' => Configuration::get('SENDYNEWSLETTER_IPVALUE'),
             'name' => (int) Configuration::get('SENDYNEWSLETTER_NAME'),
             'namereq' => (int) Configuration::get('SENDYNEWSLETTER_NAMEREQ'),
             'activeOnPages' => Configuration::get('SENDYNEWSLETTER_ACTIVE_ON_PAGES'),
@@ -174,7 +173,6 @@ class SendyIntegration extends Module
         if (Tools::isSubmit('submit' . $this->name)) {
             $installation = Tools::getValue('SENDYNEWSLETTER_INSTALLATION');
             $ip = (int) Tools::getValue('SENDYNEWSLETTER_IP');
-            $ip_var = Tools::getValue('SENDYNEWSLETTER_IPVALUE');
             $name = (int) Tools::getValue('SENDYNEWSLETTER_NAME');
             $name_req = (int) Tools::getValue('SENDYNEWSLETTER_NAMEREQ');
             $respect_opt_in = (int) Tools::getValue('SENDYNEWSLETTER_RESPECT_OPT_IN');
@@ -183,12 +181,6 @@ class SendyIntegration extends Module
             
             if (!$installation || empty($installation) || !Validate::isAbsoluteUrl($installation)) {
                 $output .= $this->displayError($this->l('Invalid installation url'));
-            }
-
-            if ($ip == 1) {
-                if (!$ip_var || empty($ip_var) || !Validate::isGenericName($ip_var)) {
-                    $output .= $this->displayError($this->l('Invalid ip custom field value'));
-                }
             }
 
             if ($output == null) {
@@ -202,7 +194,6 @@ class SendyIntegration extends Module
 
                 Configuration::updateValue('SENDYNEWSLETTER_INSTALLATION', $installation);
                 Configuration::updateValue('SENDYNEWSLETTER_IP', $ip);
-                Configuration::updateValue('SENDYNEWSLETTER_IPVALUE', $ip_var);
                 Configuration::updateValue('SENDYNEWSLETTER_NAME', $name);
                 Configuration::updateValue('SENDYNEWSLETTER_NAMEREQ', $name_req);
                 Configuration::updateValue('SENDYNEWSLETTER_RESPECT_OPT_IN', $respect_opt_in);
@@ -277,7 +268,7 @@ class SendyIntegration extends Module
                     'type' => 'radio',
                     'label' => $this->l('Capture user IP'),
                     'name' => 'SENDYNEWSLETTER_IP',
-                    'desc' => $this->l('You might want to store subscribers IP address as it might be required of you by the local law.'),
+                    'desc' => $this->l('Store subscriber ip.'),
                     'is_bool' => true,
                     'class' => 't',
                     'values' => array(
@@ -312,13 +303,6 @@ class SendyIntegration extends Module
                             'label' => $this->l('Disabled'),
                         ),
                     ),
-                ),
-                array(
-                    'type' => 'text',
-                    'label' => $this->l('IP value'),
-                    'name' => 'SENDYNEWSLETTER_IPVALUE',
-                    'desc' => $this->l('If you want to store subscibers IP address you will need to create a new custom field in your list. Input the name of that field here exactly, "IP" is not the same as "ip".'),
-                    'size' => 20,
                 ),
                 array(
                     'type' => 'radio',
@@ -424,7 +408,6 @@ class SendyIntegration extends Module
         $helper->fields_value = array(
             'SENDYNEWSLETTER_INSTALLATION' => Configuration::get('SENDYNEWSLETTER_INSTALLATION'),
             'SENDYNEWSLETTER_IP' => Configuration::get('SENDYNEWSLETTER_IP'),
-            'SENDYNEWSLETTER_IPVALUE' => Configuration::get('SENDYNEWSLETTER_IPVALUE'),
             'SENDYNEWSLETTER_NAME' => Configuration::get('SENDYNEWSLETTER_NAME'),
             'SENDYNEWSLETTER_NAMEREQ' => Configuration::get('SENDYNEWSLETTER_NAMEREQ'),
             'SENDYNEWSLETTER_RESPECT_OPT_IN' => Configuration::get('SENDYNEWSLETTER_RESPECT_OPT_IN'),
@@ -451,8 +434,7 @@ class SendyIntegration extends Module
     {
         $respect_opt_in = (bool) Configuration::get('SENDYNEWSLETTER_RESPECT_OPT_IN');
         $url = Configuration::get('SENDYNEWSLETTER_INSTALLATION') . '/subscribe';
-        $ip_set = (int)Configuration::get('SENDYNEWSLETTER_IP');
-        $ip_var = Configuration::get('SENDYNEWSLETTER_IPVALUE');
+        $store_ip = (int)Configuration::get('SENDYNEWSLETTER_IP');
         $customerLang = Language::getIsoById($params['newCustomer']->id_lang);
         $list = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $customerLang);
         
@@ -477,8 +459,8 @@ class SendyIntegration extends Module
 
         $data['name'] = $params['newCustomer']->firstname;
 
-        if ($ip_set == 1 && $ip_var && !empty($ip_var)) {
-            $data[$ip_var] = $params['newCustomer']->ip_registration_newsletter;
+        if ($store_ip == 1) {
+            $data["ipaddress"] = $params['newCustomer']->ip_registration_newsletter;
         }
 
         $ch = curl_init();
@@ -493,7 +475,8 @@ class SendyIntegration extends Module
     public function hookActionCustomerAccountUpdate($params)
     {
         if(!$params['customer']->newsletter) {
-			$customerLang = Language::getIsoById($params['customer']->id_lang);
+            $store_ip = (int)Configuration::get('SENDYNEWSLETTER_IP');
+            $customerLang = Language::getIsoById($params['customer']->id_lang);
             $url = Configuration::get('SENDYNEWSLETTER_INSTALLATION') . '/unsubscribe';
             $list = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $customerLang);
             $data = array(
@@ -501,6 +484,10 @@ class SendyIntegration extends Module
                 'email' 	=> $params['customer']->email,
                 'boolean'	=> 'true'
             );
+
+            if ($store_ip == 1) {
+                $data["ipaddress"] = $params['customer']->ip_registration_newsletter;
+            }
 
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $url);
@@ -535,7 +522,7 @@ class SendyIntegration extends Module
         $url = Configuration::get('SENDYNEWSLETTER_INSTALLATION') . '/subscribe';
         $list = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $iso_lang);
         $id_lang = Language::getIdByIso($iso_lang);
-        $sql = 'SELECT firstname, email, newsletter FROM '._DB_PREFIX_.'customer WHERE id_lang=' . $id_lang ;
+        $sql = 'SELECT firstname, email, newsletter, ip_registration_newsletter FROM '._DB_PREFIX_.'customer WHERE id_lang=' . $id_lang ;
         
         if ($results = Db::getInstance()->ExecuteS($sql)) {
             foreach ($results as $row) {
@@ -543,7 +530,7 @@ class SendyIntegration extends Module
                     echo ("Skipping " . $row['email'] . " since not opt-in to newsletter");
                     continue;
                 }
-                $this->runCurlOperation($url, $list, $row['email'], $row['firstname']);
+                $this->runCurlOperation($url, $list, $row['email'], $row['firstname'], $row['ip_registration_newsletter']);
             }
         }
     }
@@ -558,7 +545,6 @@ class SendyIntegration extends Module
         } 
         $id_shop = (int)Context::getContext()->shop->id;
         $url = Configuration::get('SENDYNEWSLETTER_INSTALLATION') . '/subscribe';
-        //$list = Configuration::get('SENDY_CUSTOMERS_COUNTRY_es');
         
         // todo, manage id_shop if multishop wants to use different lists in sendy
         $sql = 'SELECT email, active, newsletter_date_add, ip_registration_newsletter FROM '._DB_PREFIX_.$newsletter_table_name . ' WHERE id_shop=' . $id_shop;
@@ -573,14 +559,15 @@ class SendyIntegration extends Module
                 } else {
                     $newsletter_sync_count++;
                 }
-                $this->runCurlOperation($url, $list, $row['email']);
+                $this->runCurlOperation($url, $list, $row['email'], "hej", $row['ip_registration_newsletter']);
             }
         }
         return $newsletter_sync_count;
     }
 
-    private function runCurlOperation($url, $list, $email, $name="") {
-        
+    private function runCurlOperation($url, $list, $email, $name="", $ip_registration_newsletter="na", $country="") {
+        $store_ip = (int)Configuration::get('SENDYNEWSLETTER_IP');
+
         $data = array(
             'list'		=> $list,
             'email' 	=> $email,
@@ -590,7 +577,15 @@ class SendyIntegration extends Module
         if (strlen($name) > 0) {
             $data['name'] = $name;
         }
-        
+
+        if ($store_ip == 1) {
+            $data["ipaddress"] = $ip_registration_newsletter;
+        }
+
+        if (strlen($country) > 0) {
+            $data["country"] = $country;
+        }
+
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_POST, 1);

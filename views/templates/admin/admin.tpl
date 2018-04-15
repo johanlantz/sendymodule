@@ -23,7 +23,8 @@
     <p>If you are using the native Prestashop newsletter module, here you can sync that list with Sendy.</p>
     <p>The Prestashop newsletter module does not support different languages so you can only choose one Sendy destination list</p>
     <p>This is normally only needed once, when you migrate to using this module. It is however ok to run the sync at any point.</p>
-    <p><i>If you are running a multishop, only the list for the current shop will be synced..</i></p>
+    <p>Do note that only users with ACTIVE status will be migrated to Sendy. Unsubscribed users will not be synched.</p>
+    <p><i>If you are running a multishop, only the newsletter subscriber list for the current shop will be synced.</i></p>
 
     <form action="" method="post">
         <div>
