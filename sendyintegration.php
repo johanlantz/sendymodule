@@ -146,9 +146,25 @@ class SendyIntegration extends Module
         {
             $iso_of_lang_to_sync = Tools::getValue("sendy_integration_customers_sync_form");
             $this->syncCustomers($iso_of_lang_to_sync);
-            return true;
+            return $this->displayConfirmation($this->l('Customer list synchronized for language=') . $iso_of_lang_to_sync);
         }
-        return false;
+        return "";
+    }
+
+    public function processSyncNativeNewsletterForm()
+    {
+        $id_shop = (int)Context::getContext()->shop->id;
+        
+        if (Tools::isSubmit('sendy_integration_native_newsletter_sync_form'))
+        {
+            $list_name = Tools::getValue("list_to_sync_to");
+            if (strlen($list_name) < 1) {
+                return $this->displayError($this->l('Invalid list name'));
+            }
+            $newsletter_sync_count = $this->syncNewsletter($list_name);
+            return $this->displayConfirmation($this->l('Newsletter list synchronized for shop_id=') . $id_shop . ". " . $this->l('Active users synched =') . $newsletter_sync_count );
+        }
+        return "";
     }
 
     public function getContent()
@@ -204,7 +220,9 @@ class SendyIntegration extends Module
         ));
 
         $adminSyncForm = $this->display(__DIR__, '/views/templates/admin/admin.tpl');
-        $output .= $this->processSyncCustomersForm() ? $this->displayConfirmation($this->l('List synchronized')) : "";
+        // check if the post is from one of our admin forms or if its a fresh load of the page
+        $output .= $this->processSyncCustomersForm();
+        $output .= $this->processSyncNativeNewsletterForm();
         return $output . $this->displayForm() . $adminSyncForm;
     }
 
@@ -530,6 +548,37 @@ class SendyIntegration extends Module
         }
     }
 
+    public function syncNewsletter($list)
+    {
+        $newsletter_table_name = "";
+        if (_PS_VERSION_ >= 1.7) {
+            $newsletter_table_name = emailsubscription;
+        } else {
+            $newsletter_table_name = newsletter;
+        } 
+        $id_shop = (int)Context::getContext()->shop->id;
+        $url = Configuration::get('SENDYNEWSLETTER_INSTALLATION') . '/subscribe';
+        //$list = Configuration::get('SENDY_CUSTOMERS_COUNTRY_es');
+        
+        // todo, manage id_shop if multishop wants to use different lists in sendy
+        $sql = 'SELECT email, active, newsletter_date_add, ip_registration_newsletter FROM '._DB_PREFIX_.$newsletter_table_name . ' WHERE id_shop=' . $id_shop;
+        
+        $newsletter_sync_count = 0;
+        if ($results = Db::getInstance()->ExecuteS($sql)) {
+            foreach ($results as $row) {
+                $active = $row['active'];
+                if (!$active) {
+                    echo ("Skipping " . $row['email'] . " since not active to newsletter");
+                    continue;
+                } else {
+                    $newsletter_sync_count++;
+                }
+                $this->runCurlOperation($url, $list, $row['email']);
+            }
+        }
+        return $newsletter_sync_count;
+    }
+
     private function runCurlOperation($url, $list, $email, $name="") {
         
         $data = array(
@@ -550,4 +599,3 @@ class SendyIntegration extends Module
         curl_exec($ch);
     }
 }
-
