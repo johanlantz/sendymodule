@@ -510,8 +510,6 @@ class SendyIntegration extends Module
             $url .=  '/subscribe';       
         }
 
-        print_r( $params['customer']);
-        var_dump($params['customer']);
         $this->runCurlOperation($url, $list, $params['customer']->email, $name="", $params['customer']->ip_registration_newsletter, $api_key, $params['customer']->birthday);
         return true;
     }
