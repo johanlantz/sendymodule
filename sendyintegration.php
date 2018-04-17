@@ -86,8 +86,8 @@ class SendyIntegration extends Module
     public function uninstall()
     {
         foreach ($this->availableLanguages as $lang) {
-            Configuration::deleteByName('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code']);
-            Configuration::deleteByName('SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code']);
+            Configuration::deleteByName('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id);
+            Configuration::deleteByName('SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id);
         }
 
         return parent::uninstall()
@@ -110,7 +110,7 @@ class SendyIntegration extends Module
     {   
         $sendy = array(
             'url' => Configuration::get('SENDYNEWSLETTER_INSTALLATION'),
-            'list' => Configuration::get('SENDYNEWSLETTER_COUNTRY_' . $this->context->language->iso_code),
+            'list' => Configuration::get('SENDYNEWSLETTER_COUNTRY_' . $this->context->language->iso_code . "_" . Context::getContext()->shop->id),
             'ip' => (int) Configuration::get('SENDYNEWSLETTER_IP'),
             'ipval' => $_SERVER["REMOTE_ADDR"],
             'name' => (int) Configuration::get('SENDYNEWSLETTER_NAME'),
@@ -138,6 +138,50 @@ class SendyIntegration extends Module
     public function hookDisplayHeader($params)
     {
         $this->context->controller->addCSS($this->_path . 'views/css/sendynewsletter.css', 'all');
+    }
+
+    // This is loaded after a submit of the settings form. It updates settins and displays a confirm or error message
+    public function processSettingsForm()
+    {
+        $output = null;
+        if (Tools::isSubmit('submit' . $this->name)) {
+            $installation = Tools::getValue('SENDYNEWSLETTER_INSTALLATION');
+            $ip = (int) Tools::getValue('SENDYNEWSLETTER_IP');
+            $delete_on_unsubscribe = Tools::getValue('SENDYNEWSLETTER_DELETE_ON_UNSUB');
+            $name = (int) Tools::getValue('SENDYNEWSLETTER_NAME');
+            $name_req = (int) Tools::getValue('SENDYNEWSLETTER_NAMEREQ');
+            $respect_opt_in = (int) Tools::getValue('SENDYNEWSLETTER_RESPECT_OPT_IN');
+            $active_on_pages = Tools::getValue('SENDYNEWSLETTER_ACTIVE_ON_PAGES');
+            $show_info = Tools::getValue('SENDYNEWSLETTER_SHOW_INFO');
+            $sendy_api_key = Tools::getValue('SENDYNEWSLETTER_API_KEY');
+
+            if (!$installation || empty($installation) || !Validate::isAbsoluteUrl($installation)) {
+                // Submitting a non FormHelper form on 1.5 ends up here which is dangerous since Tools:getValue above returns nothing
+                $output .= $this->displayError($this->l('Invalid installation url') . $installation);
+            }
+
+            if ($output == null) {
+                foreach ($this->availableLanguages as $lang) {
+                    Configuration::updateValue('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id, Tools::getValue('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id));
+                }
+
+                foreach ($this->availableLanguages as $lang) {
+                    Configuration::updateValue('SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id, Tools::getValue('SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id));
+                }
+
+                Configuration::updateValue('SENDYNEWSLETTER_INSTALLATION', $installation);
+                Configuration::updateValue('SENDYNEWSLETTER_IP', $ip);
+                Configuration::updateValue('SENDYNEWSLETTER_DELETE_ON_UNSUB', $delete_on_unsubscribe);
+                Configuration::updateValue('SENDYNEWSLETTER_API_KEY', $sendy_api_key);
+                Configuration::updateValue('SENDYNEWSLETTER_NAME', $name);
+                Configuration::updateValue('SENDYNEWSLETTER_NAMEREQ', $name_req);
+                Configuration::updateValue('SENDYNEWSLETTER_RESPECT_OPT_IN', $respect_opt_in);
+                Configuration::updateValue('SENDYNEWSLETTER_ACTIVE_ON_PAGES', $active_on_pages);
+                Configuration::updateValue('SENDYNEWSLETTER_SHOW_INFO', $show_info);
+                $output .= $this->displayConfirmation($this->l('Settings updated'));
+            }
+        }
+        return $output;
     }
 
     public function processSyncCustomersForm()
@@ -171,45 +215,6 @@ class SendyIntegration extends Module
 
     public function getContent()
     {
-        $output = null;
-
-        if (Tools::isSubmit('submit' . $this->name)) {
-            $installation = Tools::getValue('SENDYNEWSLETTER_INSTALLATION');
-            $ip = (int) Tools::getValue('SENDYNEWSLETTER_IP');
-            $delete_on_unsubscribe = Tools::getValue('SENDYNEWSLETTER_DELETE_ON_UNSUB');
-            $name = (int) Tools::getValue('SENDYNEWSLETTER_NAME');
-            $name_req = (int) Tools::getValue('SENDYNEWSLETTER_NAMEREQ');
-            $respect_opt_in = (int) Tools::getValue('SENDYNEWSLETTER_RESPECT_OPT_IN');
-            $active_on_pages = Tools::getValue('SENDYNEWSLETTER_ACTIVE_ON_PAGES');
-            $show_info = Tools::getValue('SENDYNEWSLETTER_SHOW_INFO');
-            $sendy_api_key = Tools::getValue('SENDYNEWSLETTER_API_KEY');
-
-            if (!$installation || empty($installation) || !Validate::isAbsoluteUrl($installation)) {
-                $output .= $this->displayError($this->l('Invalid installation url'));
-            }
-
-            if ($output == null) {
-                foreach ($this->availableLanguages as $lang) {
-                    Configuration::updateValue('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'], Tools::getValue('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code']));
-                }
-
-                foreach ($this->availableLanguages as $lang) {
-                    Configuration::updateValue('SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code'], Tools::getValue('SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code']));
-                }
-
-                Configuration::updateValue('SENDYNEWSLETTER_INSTALLATION', $installation);
-                Configuration::updateValue('SENDYNEWSLETTER_IP', $ip);
-                Configuration::updateValue('SENDYNEWSLETTER_DELETE_ON_UNSUB', $delete_on_unsubscribe);
-                Configuration::updateValue('SENDYNEWSLETTER_API_KEY', $sendy_api_key);
-                Configuration::updateValue('SENDYNEWSLETTER_NAME', $name);
-                Configuration::updateValue('SENDYNEWSLETTER_NAMEREQ', $name_req);
-                Configuration::updateValue('SENDYNEWSLETTER_RESPECT_OPT_IN', $respect_opt_in);
-                Configuration::updateValue('SENDYNEWSLETTER_ACTIVE_ON_PAGES', $active_on_pages);
-                Configuration::updateValue('SENDYNEWSLETTER_SHOW_INFO', $show_info);
-                $output .= $this->displayConfirmation($this->l('Settings updated'));
-            }
-        }
-
         $sendyBack = array(         
             'availableLanguages' => $this->availableLanguages
         );
@@ -219,6 +224,7 @@ class SendyIntegration extends Module
 
         $adminSyncForm = $this->display(__DIR__, '/views/templates/admin/admin.tpl');
         // check if the post is from one of our admin forms or if its a fresh load of the page
+        $output .= $this->processSettingsForm();
         $output .= $this->processSyncCustomersForm();
         $output .= $this->processSyncNativeNewsletterForm();
         return $output . $this->displayForm() . $adminSyncForm;
@@ -391,7 +397,7 @@ class SendyIntegration extends Module
             $extra = array(
                 'type' => 'text',
                 'label' => $this->l('Language specific list id for NEWSLETTER'),
-                'name' => 'SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'],
+                'name' => 'SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id,
                 'desc' => $lang['iso_code'],
                 'size' => 20,
             );
@@ -403,7 +409,7 @@ class SendyIntegration extends Module
             $extra = array(
                 'type' => 'text',
                 'label' => $this->l('Language specific list id for CUSTOMERS'),
-                'name' => 'SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code'],
+                'name' => 'SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id,
                 'desc' => $lang['iso_code'],
                 'size' => 20,
             );
@@ -454,12 +460,12 @@ class SendyIntegration extends Module
 
         //Load existing values for the country specific newsletter fields
         foreach ($this->availableLanguages as $lang) {
-            $helper->fields_value['SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code']] = Configuration::get('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code']);
+            $helper->fields_value['SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id] = Configuration::get('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id);
         }
 
         //Load existing values for the country specific customer fields
         foreach ($this->availableLanguages as $lang) {
-            $helper->fields_value['SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code']] = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code']);
+            $helper->fields_value['SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id] = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id);
         }
             
 
@@ -473,7 +479,7 @@ class SendyIntegration extends Module
         $url = Configuration::get('SENDYNEWSLETTER_INSTALLATION') . '/subscribe';
         $store_ip = (int)Configuration::get('SENDYNEWSLETTER_IP');
         $customerLang = Language::getIsoById($params['newCustomer']->id_lang);
-        $list = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $customerLang);
+        $list = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $customerLang . "_" . Context::getContext()->shop->id);
         
         //Do not subscribe if this country does not have a customer newsletter list
         if ($list == null || strlen($list) == 0) {
@@ -496,7 +502,7 @@ class SendyIntegration extends Module
     {
         $url = Configuration::get('SENDYNEWSLETTER_INSTALLATION');
         $customerLang = Language::getIsoById($params['customer']->id_lang);
-        $list = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $customerLang);
+        $list = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $customerLang . "_" . Context::getContext()->shop->id);
         $api_key = ""; 
         if(!$params['customer']->newsletter) {
             $delete_on_unsubscribe = Configuration::get('SENDYNEWSLETTER_DELETE_ON_UNSUB');
@@ -518,14 +524,15 @@ class SendyIntegration extends Module
     {
         $respect_opt_in = (bool) Configuration::get('SENDYNEWSLETTER_RESPECT_OPT_IN');
         $url = Configuration::get('SENDYNEWSLETTER_INSTALLATION') . '/subscribe';
-        $list = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $iso_lang);
+        $list = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $iso_lang . "_" . Context::getContext()->shop->id);
 
         if (!$list) {
             return $this->displayError($this->l('Failed to sync customers. No list defined for language = ' . $iso_lang));
         }
 
         $id_lang = Language::getIdByIso($iso_lang);
-        $sql = 'SELECT firstname, email, newsletter, ip_registration_newsletter FROM '._DB_PREFIX_.'customer WHERE id_lang=' . $id_lang ;
+        $id_shop = Context::getContext()->shop->id;
+        $sql = 'SELECT firstname, email, newsletter, ip_registration_newsletter FROM '._DB_PREFIX_.'customer WHERE id_lang=' . $id_lang . ' AND id_shop=' . $id_shop;
         
         $customer_sync_count = 0;
         $customer_skip_count = 0;
