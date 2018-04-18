@@ -7,6 +7,7 @@
     <p>This is normally only needed once, after the first installation but you can run it anytime, for instance if you change lists above etc.
     If a customer is already subscribed to a list, nothing happens.
     </p>
+    <p><b>If you have a lot of customers, this operation might take a long time to complete. Do not reload the page, instead refresh your Sendy webpage and you should see the list filling up.</b></p>
     <p></p>
 
     <form action="" method="post">
@@ -25,6 +26,7 @@
     <p>This is normally only needed once, when you migrate to using this module. It is however ok to run the sync at any point.</p>
     <p>Do note that only users with ACTIVE status will be migrated to Sendy. Unsubscribed users will not be synched.</p>
     <p><i>If you are running a multishop, only the newsletter subscriber list for the current shop will be synced.</i></p>
+    <p><b>If you have a lot of subscribers, this operation might take a long time to complete. Do not reload the page, instead refresh your Sendy webpage and you should see the list filling up.</b></p>
 
     <form action="" method="post">
         <div>

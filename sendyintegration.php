@@ -156,7 +156,9 @@ class SendyIntegration extends Module
             $sendy_api_key = Tools::getValue('SENDYNEWSLETTER_API_KEY');
 
             if (!$installation || empty($installation) || !Validate::isAbsoluteUrl($installation)) {
-                // Submitting a non FormHelper form on 1.5 ends up here which is dangerous since Tools:getValue above returns nothing
+                // Submitting the customer or newsletter forms on 1.5 ends up here which is dangerous 
+                // since Tools:getValue above returns nothing. To prevent this we do not call this function
+                // if the other forms produced an output message.
                 $output .= $this->displayError($this->l('Invalid installation url') . $installation);
             }
 
@@ -194,7 +196,7 @@ class SendyIntegration extends Module
             $iso_of_lang_to_sync = Tools::getValue("sendy_integration_customers_sync_form");
             return $this->syncCustomers($iso_of_lang_to_sync);
         }
-        return "";
+        return null;
     }
 
     public function processSyncNativeNewsletterForm()
@@ -210,11 +212,13 @@ class SendyIntegration extends Module
             $result = $this->syncNewsletter($list_name);
             return $this->displayConfirmation($this->l('Newsletter list synchronized for shop_id=') . $id_shop . ". " . $result );
         }
-        return "";
+        return null;
     }
 
     public function getContent()
     {
+        $output = null;
+
         $sendyBack = array(         
             'availableLanguages' => $this->availableLanguages
         );
@@ -223,10 +227,22 @@ class SendyIntegration extends Module
         ));
 
         $adminSyncForm = $this->display(__DIR__, '/views/templates/admin/admin.tpl');
-        // check if the post is from one of our admin forms or if its a fresh load of the page
-        $output .= $this->processSettingsForm();
-        $output .= $this->processSyncCustomersForm();
-        $output .= $this->processSyncNativeNewsletterForm();
+        
+        // Check if the post is from one of our admin forms or if its a fresh load of the page
+        // If it was one of the forms being submitted, a confirmation or error message will be 
+        // presented in output
+        $output = $this->processSyncCustomersForm();
+
+        if (!$output) {
+            $output = $this->processSyncNativeNewsletterForm();
+        }
+        // In PS 1.5, when submitting the customer or newsletter sync form, it also triggers the 
+        // settings helper form for some reason and the context is messed up. To prevent this
+        // from causing problems, we only process the settings form if the other two did not 
+        // produce any output (i.e. they were not submitted).
+        if (!$output) {
+            $output = $this->processSettingsForm();
+        }
         return $output . $this->displayForm() . $adminSyncForm;
     }
 
@@ -539,7 +555,7 @@ class SendyIntegration extends Module
         if ($results = Db::getInstance()->ExecuteS($sql)) {
             foreach ($results as $row) {
                 if ((int)$row['newsletter'] == 0 && $respect_opt_in) {
-                    echo ("Skipping " . $row['email'] . " since not opt-in to newsletter");
+                    // echo ("Skipping " . $row['email'] . " since not opt-in to newsletter");
                     $customer_skip_count++;
                     continue;
                 }
@@ -570,7 +586,7 @@ class SendyIntegration extends Module
             foreach ($results as $row) {
                 $active = $row['active'];
                 if (!$active) {
-                    echo ("Skipping " . $row['email'] . " since not active to newsletter");
+                    // echo ("Skipping " . $row['email'] . " since not active to newsletter");
                     $newsletter_skip_count++;
                     continue;
                 } else {
