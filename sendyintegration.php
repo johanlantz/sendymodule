@@ -18,6 +18,7 @@ class SendyIntegration extends Module
     private $installation;
     private $setup;
     private $availableLanguages;
+    private $footerHookToUse;
 
     public function __construct()
     {
@@ -46,6 +47,12 @@ class SendyIntegration extends Module
             $this->setup = true;
         }
 
+        if (_PS_VERSION_ >= 1.7) {
+            $this->footerHookToUse = 'displayFooterBefore';
+        } else {
+            $this->footerHookToUse = 'displayFooter';
+        } 
+
         $this->availableLanguages = Language::getLanguages();
         parent::__construct();
     }
@@ -69,7 +76,7 @@ class SendyIntegration extends Module
         }
 
         return parent::install()
-        && $this->registerHook('displayFooterBefore')
+        && $this->registerHook($this->footerHookToUse)
         && $this->registerHook('header')
         && $this->registerHook('actionCustomerAccountAdd')
         && $this->registerHook('actionCustomerAccountUpdate')
@@ -91,7 +98,7 @@ class SendyIntegration extends Module
         }
 
         return parent::uninstall()
-        && $this->unregisterHook('displayFooterBefore')
+        && $this->unregisterHook($this->footerHookToUse)
         && $this->unregisterHook('header')
         && $this->unregisterHook('actionCustomerAccountAdd')
         && $this->unregisterHook('actionCustomerAccountUpdate')
@@ -104,6 +111,11 @@ class SendyIntegration extends Module
         && Configuration::deleteByName('SENDYNEWSLETTER_NAMEREQ')
         && Configuration::deleteByName('SENDYNEWSLETTER_RESPECT_OPT_IN')
         && Configuration::deleteByName('SENDYNEWSLETTER_SHOW_INFO');
+    }
+
+    public function hookDisplayFooter($params)
+    {
+        return $this->hookDisplayFooterBefore($params);
     }
 
     public function hookDisplayFooterBefore($params)
