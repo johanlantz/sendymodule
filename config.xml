@@ -2,7 +2,7 @@
         <module>
             <name>sendyintegration</name>
             <displayName><![CDATA[Sendy integration]]></displayName>
-            <version><![CDATA[1.0]]></version>
+            <version><![CDATA[1.5]]></version>
             <description><![CDATA[Sendy integration]]></description>
             <author><![CDATA[Givensa]]></author>
             <tab><![CDATA[front_office_features]]></tab>

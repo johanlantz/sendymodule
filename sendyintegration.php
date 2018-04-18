@@ -24,7 +24,7 @@ class SendyIntegration extends Module
     {
         $this->name = 'sendyintegration';
         $this->tab = 'front_office_features';
-        $this->version = '1.4';
+        $this->version = '1.5';
         $this->author = 'Givensa';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = array('min' => '1.5', 'max' => '1.7.99');
