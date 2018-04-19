@@ -24,7 +24,7 @@ class SendyIntegration extends Module
     {
         $this->name = 'sendyintegration';
         $this->tab = 'front_office_features';
-        $this->version = '1.5';
+        $this->version = '1.5.0';
         $this->author = 'Givensa';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = array('min' => '1.5', 'max' => '1.7.99');
@@ -68,10 +68,10 @@ class SendyIntegration extends Module
             Configuration::updateValue('SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code'], "");
 
             //Create language dirs and copy default subscribe image as placeholders
-            if(!is_dir(__DIR__ . "/img/" . $lang['iso_code'])){
-                mkdir(__DIR__ . "/img/" . $lang['iso_code'], 0755, true);
-                copy(__DIR__ . "/img/en/sendy-newsletter-signup-subscribe.png", __DIR__ . "/img/" . $lang['iso_code'] . "/sendy-newsletter-signup-subscribe.png");
-                copy(__DIR__ . "/img/en/sendy-newsletter-signup-subscribe2x.png", __DIR__ . "/img/" . $lang['iso_code'] . "/sendy-newsletter-signup-subscribe2x.png");
+            if(!is_dir(_PS_MODULE_DIR_ . "sendyintegration/views/img/" . $lang['iso_code'])){
+                mkdir(_PS_MODULE_DIR_ . "sendyintegration/views/img/" . $lang['iso_code'], 0755, true);
+                copy(_PS_MODULE_DIR_ . "sendyintegration/views/img/en/sendy-newsletter-signup-subscribe.png", _PS_MODULE_DIR_ . "sendyintegration/views/img/" . $lang['iso_code'] . "/sendy-newsletter-signup-subscribe.png");
+                copy(_PS_MODULE_DIR_ . "sendyintegration/views/img/en/sendy-newsletter-signup-subscribe2x.png", _PS_MODULE_DIR_ . "sendyintegration/views/img/" . $lang['iso_code'] . "/sendy-newsletter-signup-subscribe2x.png");
             }
         }
 
