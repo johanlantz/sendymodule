@@ -1,5 +1,9 @@
 <?php
-/*
+/**
+ * @author Givensa
+ * @copyright  Givensa Home and Design S.L
+ * @license  Commercial closed source
+ * @version  Release: $Revision$
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,11 +28,11 @@ class SendyIntegration extends Module
     {
         $this->name = 'sendyintegration';
         $this->tab = 'front_office_features';
-        $this->version = '1.5.0';
+        $this->version = '2.0.1';
         $this->author = 'Givensa';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = array('min' => '1.5', 'max' => '1.7.99');
-
+        $this->module_key = "a6bcc9c270978933cf00b25c659c5e37";
         $this->displayName = $this->l('Sendy Newsletter Integration');
         $this->description = $this->l('Sync newsletter subscribers and customers with your sendy installation');
 
@@ -51,7 +55,7 @@ class SendyIntegration extends Module
             $this->footerHookToUse = 'displayFooterBefore';
         } else {
             $this->footerHookToUse = 'displayFooter';
-        } 
+        }
 
         $this->availableLanguages = Language::getLanguages();
         parent::__construct();
@@ -68,10 +72,19 @@ class SendyIntegration extends Module
             Configuration::updateValue('SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code'], "");
 
             //Create language dirs and copy default subscribe image as placeholders
-            if(!is_dir(_PS_MODULE_DIR_ . "sendyintegration/views/img/" . $lang['iso_code'])){
+            if (!is_dir(_PS_MODULE_DIR_ . "sendyintegration/views/img/" . $lang['iso_code'])) {
                 mkdir(_PS_MODULE_DIR_ . "sendyintegration/views/img/" . $lang['iso_code'], 0755, true);
-                copy(_PS_MODULE_DIR_ . "sendyintegration/views/img/en/sendy-newsletter-signup-subscribe.png", _PS_MODULE_DIR_ . "sendyintegration/views/img/" . $lang['iso_code'] . "/sendy-newsletter-signup-subscribe.png");
-                copy(_PS_MODULE_DIR_ . "sendyintegration/views/img/en/sendy-newsletter-signup-subscribe2x.png", _PS_MODULE_DIR_ . "sendyintegration/views/img/" . $lang['iso_code'] . "/sendy-newsletter-signup-subscribe2x.png");
+                copy(
+                    _PS_MODULE_DIR_ . "sendyintegration/views/img/en/sendy-newsletter-signup-subscribe.png",
+                    _PS_MODULE_DIR_ . "sendyintegration/views/img/" . $lang['iso_code'] .
+                    "/sendy-newsletter-signup-subscribe.png"
+                );
+
+                copy(
+                    _PS_MODULE_DIR_ . "sendyintegration/views/img/en/sendy-newsletter-signup-subscribe2x.png",
+                    _PS_MODULE_DIR_ . "sendyintegration/views/img/" . $lang['iso_code'] .
+                    "/sendy-newsletter-signup-subscribe2x.png"
+                );
             }
         }
 
@@ -87,14 +100,19 @@ class SendyIntegration extends Module
         && Configuration::updateValue('SENDYNEWSLETTER_NAME', false)
         && Configuration::updateValue('SENDYNEWSLETTER_NAMEREQ', false)
         && Configuration::updateValue('SENDYNEWSLETTER_RESPECT_OPT_IN', true)
-        && Configuration::updateValue('SENDYNEWSLETTER_SHOW_INFO', false); 
+        && Configuration::updateValue('SENDYNEWSLETTER_SHOW_INFO', false);
     }
 
     public function uninstall()
     {
         foreach ($this->availableLanguages as $lang) {
-            Configuration::deleteByName('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id);
-            Configuration::deleteByName('SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id);
+            Configuration::deleteByName(
+                'SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id
+            );
+
+            Configuration::deleteByName(
+                'SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id
+            );
         }
 
         return parent::uninstall()
@@ -119,16 +137,17 @@ class SendyIntegration extends Module
     }
 
     public function hookDisplayFooterBefore($params)
-    {   
+    {
         $sendy = array(
             'url' => Configuration::get('SENDYNEWSLETTER_INSTALLATION'),
-            'list' => Configuration::get('SENDYNEWSLETTER_COUNTRY_' . $this->context->language->iso_code . "_" . Context::getContext()->shop->id),
+            'list' => Configuration::get('SENDYNEWSLETTER_COUNTRY_' .
+                $this->context->language->iso_code . "_" . Context::getContext()->shop->id),
             'ip' => (int) Configuration::get('SENDYNEWSLETTER_IP'),
             'ipval' => $_SERVER["REMOTE_ADDR"],
             'name' => (int) Configuration::get('SENDYNEWSLETTER_NAME'),
             'namereq' => (int) Configuration::get('SENDYNEWSLETTER_NAMEREQ'),
             'activeOnPages' => Configuration::get('SENDYNEWSLETTER_ACTIVE_ON_PAGES'),
-            'showInfo' => Configuration::get('SENDYNEWSLETTER_SHOW_INFO')
+            'showInfo' => Configuration::get('SENDYNEWSLETTER_SHOW_INFO'),
         );
         $this->context->smarty->assign(array(
             'sendynews' => $sendy,
@@ -138,7 +157,7 @@ class SendyIntegration extends Module
                 return $this->display(__FILE__, 'sendyintegration2.tpl');
             } else {
                 return $this->display(__FILE__, 'sendyintegration.tpl');
-            } 
+            }
         }
     }
 
@@ -168,7 +187,7 @@ class SendyIntegration extends Module
             $sendy_api_key = Tools::getValue('SENDYNEWSLETTER_API_KEY');
 
             if (!$installation || empty($installation) || !Validate::isAbsoluteUrl($installation)) {
-                // Submitting the customer or newsletter forms on 1.5 ends up here which is dangerous 
+                // Submitting the customer or newsletter forms on 1.5 ends up here which is dangerous
                 // since Tools:getValue above returns nothing. To prevent this we do not call this function
                 // if the other forms produced an output message.
                 $output .= $this->displayError($this->l('Invalid installation url') . $installation);
@@ -176,11 +195,19 @@ class SendyIntegration extends Module
 
             if ($output == null) {
                 foreach ($this->availableLanguages as $lang) {
-                    Configuration::updateValue('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id, Tools::getValue('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id));
+                    Configuration::updateValue(
+                        'SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id,
+                        Tools::getValue('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'] . "_" .
+                        Context::getContext()->shop->id)
+                    );
                 }
 
                 foreach ($this->availableLanguages as $lang) {
-                    Configuration::updateValue('SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id, Tools::getValue('SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id));
+                    Configuration::updateValue(
+                        'SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id,
+                        Tools::getValue('SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code'] . "_" .
+                        Context::getContext()->shop->id)
+                    );
                 }
 
                 Configuration::updateValue('SENDYNEWSLETTER_INSTALLATION', $installation);
@@ -200,11 +227,10 @@ class SendyIntegration extends Module
 
     public function processSyncCustomersForm()
     {
-        // This is a little bit unusual, since each input is a submit button, the name is always the name of the whole form, 
-        // not the name of an individual element such as iso_lang that you would expect. This is since there is no explicit
-        // submit button for the whole form
-        if (Tools::isSubmit('sendy_integration_customers_sync_form'))
-        {
+        // This is a little bit unusual, since each input is a submit button, the name is always the name of the
+        // whole form, not the name of an individual element such as iso_lang that you would expect.
+        // This is since there is no explicit submit button for the whole form.
+        if (Tools::isSubmit('sendy_integration_customers_sync_form')) {
             $iso_of_lang_to_sync = Tools::getValue("sendy_integration_customers_sync_form");
             return $this->syncCustomers($iso_of_lang_to_sync);
         }
@@ -213,16 +239,16 @@ class SendyIntegration extends Module
 
     public function processSyncNativeNewsletterForm()
     {
-        $id_shop = (int)Context::getContext()->shop->id;
-        
-        if (Tools::isSubmit('sendy_integration_native_newsletter_sync_form'))
-        {
+        $id_shop = (int) Context::getContext()->shop->id;
+
+        if (Tools::isSubmit('sendy_integration_native_newsletter_sync_form')) {
             $list_name = Tools::getValue("list_to_sync_to");
-            if (strlen($list_name) < 1) {
+            if (Tools::strlen($list_name) < 1) {
                 return $this->displayError($this->l('Invalid list name'));
             }
             $result = $this->syncNewsletter($list_name);
-            return $this->displayConfirmation($this->l('Newsletter list synchronized for shop_id=') . $id_shop . ". " . $result );
+            return $this->displayConfirmation($this->l('Newsletter list synchronized for shop_id=') .
+                $id_shop . ". " . $result);
         }
         return null;
     }
@@ -231,26 +257,27 @@ class SendyIntegration extends Module
     {
         $output = null;
 
-        $sendyBack = array(         
-            'availableLanguages' => $this->availableLanguages
+        $sendyBack = array(
+            'availableLanguages' => $this->availableLanguages,
         );
         $this->context->smarty->assign(array(
             'sendyBack' => $sendyBack,
         ));
 
-        $adminSyncForm = $this->display(__DIR__, '/views/templates/admin/admin.tpl');
-        
+        //$adminSyncForm = $this->display(_PS_MODULE_DIR_, "sendyintegration/views/templates/admin/admin.tpl");
+        $adminSyncForm = $this->display(__FILE__, '/views/templates/admin/admin.tpl');
+
         // Check if the post is from one of our admin forms or if its a fresh load of the page
-        // If it was one of the forms being submitted, a confirmation or error message will be 
+        // If it was one of the forms being submitted, a confirmation or error message will be
         // presented in output
         $output = $this->processSyncCustomersForm();
 
         if (!$output) {
             $output = $this->processSyncNativeNewsletterForm();
         }
-        // In PS 1.5, when submitting the customer or newsletter sync form, it also triggers the 
+        // In PS 1.5, when submitting the customer or newsletter sync form, it also triggers the
         // settings helper form for some reason and the context is messed up. To prevent this
-        // from causing problems, we only process the settings form if the other two did not 
+        // from causing problems, we only process the settings form if the other two did not
         // produce any output (i.e. they were not submitted).
         if (!$output) {
             $output = $this->processSettingsForm();
@@ -264,6 +291,7 @@ class SendyIntegration extends Module
         $default_lang = (int) Configuration::get('PS_LANG_DEFAULT');
 
         // Init Fields form array
+        $fields_form = null;
         $fields_form[0]['form'] = array(
             'legend' => array(
                 'title' => $this->l('Sendy Newsletter Settings'),
@@ -289,7 +317,8 @@ class SendyIntegration extends Module
                     'type' => 'radio',
                     'label' => $this->l('Show unsubscribe info'),
                     'name' => 'SENDYNEWSLETTER_SHOW_INFO',
-                    'desc' => $this->l('Show tooltip icon about unregistration, could be useful for GDPR (only if your theme has bootstrap)'),
+                    'desc' => $this->l('Show tooltip icon about unregistration, 
+                        could be useful for GDPR (only if your theme has bootstrap)'),
                     'is_bool' => true,
                     'class' => 't',
                     'values' => array(
@@ -329,7 +358,8 @@ class SendyIntegration extends Module
                     'type' => 'radio',
                     'label' => $this->l('Delete on unsubscribe'),
                     'name' => 'SENDYNEWSLETTER_DELETE_ON_UNSUB',
-                    'desc' => $this->l('Delete user information in Sendy on unsubscribe. You must assign the API key below for this to work.'),
+                    'desc' => $this->l('Delete user information in Sendy on unsubscribe. 
+                        You must assign the API key below for this to work.'),
                     'is_bool' => true,
                     'class' => 't',
                     'values' => array(
@@ -357,7 +387,8 @@ class SendyIntegration extends Module
                     'type' => 'radio',
                     'label' => $this->l('Respect opt-in'),
                     'name' => 'SENDYNEWSLETTER_RESPECT_OPT_IN',
-                    'desc' => $this->l('Respect new clients newsletter setting. If you do not show the checkbox and new clients should be auto subscribed, choose disabled here.'),
+                    'desc' => $this->l('Respect new clients newsletter setting. 
+                        If you do not show the checkbox and new clients should be auto subscribed, choose disabled.'),
                     'is_bool' => true,
                     'class' => 't',
                     'values' => array(
@@ -483,34 +514,35 @@ class SendyIntegration extends Module
             'SENDYNEWSLETTER_NAMEREQ' => Configuration::get('SENDYNEWSLETTER_NAMEREQ'),
             'SENDYNEWSLETTER_RESPECT_OPT_IN' => Configuration::get('SENDYNEWSLETTER_RESPECT_OPT_IN'),
             'SENDYNEWSLETTER_ACTIVE_ON_PAGES' => Configuration::get('SENDYNEWSLETTER_ACTIVE_ON_PAGES'),
-            'SENDYNEWSLETTER_SHOW_INFO' => Configuration::get('SENDYNEWSLETTER_SHOW_INFO')
+            'SENDYNEWSLETTER_SHOW_INFO' => Configuration::get('SENDYNEWSLETTER_SHOW_INFO'),
         );
 
         //Load existing values for the country specific newsletter fields
         foreach ($this->availableLanguages as $lang) {
-            $helper->fields_value['SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id] = Configuration::get('SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id);
+            $helper->fields_value['SENDYNEWSLETTER_COUNTRY_' . $lang['iso_code'] . "_" .
+                Context::getContext()->shop->id] = Configuration::get('SENDYNEWSLETTER_COUNTRY_' .
+                $lang['iso_code'] . "_" . Context::getContext()->shop->id);
         }
 
         //Load existing values for the country specific customer fields
         foreach ($this->availableLanguages as $lang) {
-            $helper->fields_value['SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id] = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code'] . "_" . Context::getContext()->shop->id);
+            $helper->fields_value['SENDY_CUSTOMERS_COUNTRY_' . $lang['iso_code'] . "_" .
+                Context::getContext()->shop->id] = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' .
+                $lang['iso_code'] . "_" . Context::getContext()->shop->id);
         }
-            
 
         return $helper->generateForm($fields_form);
     }
-
 
     public function hookActionCustomerAccountAdd($params)
     {
         $respect_opt_in = (bool) Configuration::get('SENDYNEWSLETTER_RESPECT_OPT_IN');
         $url = Configuration::get('SENDYNEWSLETTER_INSTALLATION') . '/subscribe';
-        $store_ip = (int)Configuration::get('SENDYNEWSLETTER_IP');
         $customerLang = Language::getIsoById($params['newCustomer']->id_lang);
         $list = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $customerLang . "_" . Context::getContext()->shop->id);
-        
+
         //Do not subscribe if this country does not have a customer newsletter list
-        if ($list == null || strlen($list) == 0) {
+        if ($list == null || Tools::strlen($list) == 0) {
             return;
         }
         //This might not work if the original newsletter module is not active (depending on what PS_CUSTOMER_NWSL does)
@@ -522,7 +554,15 @@ class SendyIntegration extends Module
             return;
         }
 
-        $this->runCurlOperation($url, $list, $params['newCustomer']->email, $params['newCustomer']->firstname, $_SERVER["REMOTE_ADDR"], "", $params['newCustomer']->birthday);
+        $this->runCurlOperation(
+            $url,
+            $list,
+            $params['newCustomer']->email,
+            $params['newCustomer']->firstname,
+            $_SERVER["REMOTE_ADDR"],
+            "",
+            $params['newCustomer']->birthday
+        );
         return true;
     }
 
@@ -531,8 +571,8 @@ class SendyIntegration extends Module
         $url = Configuration::get('SENDYNEWSLETTER_INSTALLATION');
         $customerLang = Language::getIsoById($params['customer']->id_lang);
         $list = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $customerLang . "_" . Context::getContext()->shop->id);
-        $api_key = ""; 
-        if(!$params['customer']->newsletter) {
+        $api_key = "";
+        if (!$params['customer']->newsletter) {
             $delete_on_unsubscribe = Configuration::get('SENDYNEWSLETTER_DELETE_ON_UNSUB');
             if ($delete_on_unsubscribe) {
                 $url .= '/api/subscribers/delete.php';
@@ -541,10 +581,18 @@ class SendyIntegration extends Module
                 $url .= '/unsubscribe';
             }
         } else {
-            $url .=  '/subscribe';       
+            $url .= '/subscribe';
         }
 
-        $this->runCurlOperation($url, $list, $params['customer']->email, $name="", $params['customer']->ip_registration_newsletter, $api_key, $params['customer']->birthday);
+        $this->runCurlOperation(
+            $url,
+            $list,
+            $params['customer']->email,
+            "",
+            $params['customer']->ip_registration_newsletter,
+            $api_key,
+            $params['customer']->birthday
+        );
         return true;
     }
 
@@ -555,27 +603,38 @@ class SendyIntegration extends Module
         $list = Configuration::get('SENDY_CUSTOMERS_COUNTRY_' . $iso_lang . "_" . Context::getContext()->shop->id);
 
         if (!$list) {
-            return $this->displayError($this->l('Failed to sync customers. No list defined for language = ' . $iso_lang));
+            return $this->displayError($this->l('Failed to sync customers. No list defined for language = '
+                . $iso_lang));
         }
 
         $id_lang = Language::getIdByIso($iso_lang);
         $id_shop = Context::getContext()->shop->id;
-        $sql = 'SELECT firstname, email, newsletter, ip_registration_newsletter FROM '._DB_PREFIX_.'customer WHERE id_lang=' . $id_lang . ' AND id_shop=' . $id_shop;
-        
+        $sql = 'SELECT firstname, email, newsletter, ip_registration_newsletter FROM ' . _DB_PREFIX_ .
+            'customer WHERE id_lang=' . $id_lang . ' AND id_shop=' . $id_shop;
+
         $customer_sync_count = 0;
         $customer_skip_count = 0;
         if ($results = Db::getInstance()->ExecuteS($sql)) {
             foreach ($results as $row) {
-                if ((int)$row['newsletter'] == 0 && $respect_opt_in) {
+                if ((int) $row['newsletter'] == 0 && $respect_opt_in) {
                     // echo ("Skipping " . $row['email'] . " since not opt-in to newsletter");
                     $customer_skip_count++;
                     continue;
                 }
                 $customer_sync_count++;
-                $this->runCurlOperation($url, $list, $row['email'], $row['firstname'], $row['ip_registration_newsletter']);
+                $this->runCurlOperation(
+                    $url,
+                    $list,
+                    $row['email'],
+                    $row['firstname'],
+                    $row['ip_registration_newsletter']
+                );
             }
         }
-        return $this->displayConfirmation($this->l('Customer list synchronized for language=') . $iso_lang . ". " . "Synced " . $customer_sync_count . " Skipped: " . $customer_skip_count);
+        return $this->displayConfirmation(
+            $this->l('Customer list synchronized for language=') . $iso_lang . ". " . "Synced " .
+            $customer_sync_count . " Skipped: " . $customer_skip_count
+        );
     }
 
     public function syncNewsletter($list)
@@ -585,13 +644,14 @@ class SendyIntegration extends Module
             $newsletter_table_name = emailsubscription;
         } else {
             $newsletter_table_name = newsletter;
-        } 
-        $id_shop = (int)Context::getContext()->shop->id;
+        }
+        $id_shop = (int) Context::getContext()->shop->id;
         $url = Configuration::get('SENDYNEWSLETTER_INSTALLATION') . '/subscribe';
-        
+
         // todo, manage id_shop if multishop wants to use different lists in sendy
-        $sql = 'SELECT email, active, newsletter_date_add, ip_registration_newsletter FROM '._DB_PREFIX_.$newsletter_table_name . ' WHERE id_shop=' . $id_shop;
-        
+        $sql = 'SELECT email, active, newsletter_date_add, ip_registration_newsletter FROM ' . _DB_PREFIX_ .
+            $newsletter_table_name . ' WHERE id_shop=' . $id_shop;
+
         $newsletter_sync_count = 0;
         $newsletter_skip_count = 0;
         if ($results = Db::getInstance()->ExecuteS($sql)) {
@@ -610,16 +670,24 @@ class SendyIntegration extends Module
         return "Synced " . $newsletter_sync_count . " Skipped: " . $newsletter_skip_count;
     }
 
-    private function runCurlOperation($url, $list, $email, $name="", $ip_registration_newsletter="na", $sendy_api_key="", $birthday="") {
-        $store_ip = (int)Configuration::get('SENDYNEWSLETTER_IP');
+    private function runCurlOperation(
+        $url,
+        $list,
+        $email,
+        $name = "",
+        $ip_registration_newsletter = "na",
+        $sendy_api_key = "",
+        $birthday = ""
+    ) {
+        $store_ip = (int) Configuration::get('SENDYNEWSLETTER_IP');
 
         $data = array(
-            'list'		=> $list,
-            'email' 	=> $email,
-            'boolean'	=> 'true'
+            'list' => $list,
+            'email' => $email,
+            'boolean' => 'true',
         );
 
-        if (strlen($name) > 0) {
+        if (Tools::strlen($name) > 0) {
             $data['name'] = $name;
         }
 
@@ -627,15 +695,15 @@ class SendyIntegration extends Module
             $data["ipaddress"] = $ip_registration_newsletter;
         }
 
-        if (strlen($sendy_api_key) > 0) {
+        if (Tools::strlen($sendy_api_key) > 0) {
             $data["api_key"] = $sendy_api_key;
-            $data["list_id"] = $list;  //delete uses list_id and not list
+            $data["list_id"] = $list; //delete uses list_id and not list
         }
 
-        if ($birthday && strlen($birthday) > 0) {
+        if ($birthday && Tools::strlen($birthday) > 0) {
             $data["birthday"] = $birthday;
         }
-        
+
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_POST, 1);
