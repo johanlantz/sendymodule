@@ -20,7 +20,7 @@
     <p>The setting above to respect the customer opt-in to your newsletter will be respected. So that if respecting the users opt-in is enabled, only customers
     that have actively opted-in to your newsletter will be added.</p>
     <p>This is normally only needed once, after the first installation but you can run it anytime, for instance if you change lists above etc.
-    If a customer is already subscribed to a list, nothing happens.
+    Important: If a customer is already subscribed to a list, nothing happens. HOWEVER if the customer has unsubscribed directly with Sendy and not in his account settings, running this sync to an existing list will re-subscribe the customer.
     </p>
     <p><b>If you have a lot of customers, this operation might take a long time to complete. Do not reload the page, instead refresh your Sendy webpage and you should see the list filling up.</b></p>
     <p></p>
