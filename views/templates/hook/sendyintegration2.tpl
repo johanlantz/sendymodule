@@ -33,10 +33,7 @@
 					{/if}
 
 					{* Add honeypot *}
-					<div style="display:none;">
-						<label for="xip">xip</label><br/>
-						<input type="text" name="xip" id="xip"/>
-					</div>
+					<input class="c-input__t" type="text" name="lastName" id="lastName"/>
 
 					<input id="sendynewsletter_email_oneseven" type="text" name="email" class="account_input" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="{l s='Your email address' mod='sendyintegration'}" required/>
 					<input id="submit_oneseven" type="submit" value="ok" class="btn btn-primary"  name="submitNewsletter" />

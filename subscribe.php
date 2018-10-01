@@ -26,18 +26,18 @@ exit;
 $email = null;
 $name = null;
 $ip = null;
-$xip = null;
+$honeypot = null;
 
 if (Tools::getIsset("submitNewsletter")) {
     $email = Tools::getValue("email");
     $name = Tools::getValue("name");
-    $xip = Tools::getValue("xip");
+    $honeypot = Tools::getValue("lastName");
     $ip = Tools::getValue("ip");
 } else {
     exit;
 }
 
-if ($xip && Tools::strlen($xip) > 0) {
+if ($honeypot && Tools::strlen($honeypot) > 0) {
     exit;
 }
 
