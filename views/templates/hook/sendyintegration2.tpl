@@ -14,15 +14,23 @@
  */
  *}
 
+{* The recaptcha script could potentially go to a general header or footer *}
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+<script>
+function onSubmitNewsletterSignup(token) {
+	document.getElementById("submit_oneseven").disabled = false;
+}
+</script>
+
 <!-- Sendy Newsletter module-->
 {if ($sendynews.activeOnPages|strstr:$page.page_name) }
 	{if {$sendynews.list|count_characters} > 1}
-		<div id="sendy_newsletter" class="">
-			<span id="newsletter_span1" class="newsletter_element"><img height="150" width="188" src="{$urls.base_url}modules/sendyintegration/views/img/sendy-newsletter-signup-products.jpg"></span>
-			<span id="newsletter_span2" class="newsletter_element"><img height="150" width="286" src="{$urls.base_url}modules/sendyintegration/views/img/{$language.iso_code}/sendy-newsletter-signup-subscribe.png"></span>
-			<span id="newsletter_span3" class="newsletter_element"><img height="150" width="229" src="{$urls.base_url}modules/sendyintegration/views/img/sendy-newsletter-signup-mail.png"></span>
-			
-			<span class="newsletter_element">
+		<div id="sendy_newsletter">
+			<div class="d-none d-lg-block"><img height="150" width="188" src="{$urls.base_url}modules/sendyintegration/views/img/sendy-newsletter-signup-products.jpg"></div>
+			<div class=""><img height="150" width="286" src="{$urls.base_url}modules/sendyintegration/views/img/{$language.iso_code}/sendy-newsletter-signup-subscribe.png"></div>
+			<div class="d-none d-lg-block"><img height="150" width="229" src="{$urls.base_url}modules/sendyintegration/views/img/sendy-newsletter-signup-mail.png"></div>
+
+			<div class="">
 				<form id="sendynewsletter_form" style="display:inline;" action="{$sendynews.url}/subscribe" method="post">
 					<input type="hidden" id="sendynewsletter_list" name="list" value="{$sendynews.list}" />
 					{if $sendynews.ip == 1}
@@ -35,8 +43,11 @@
 					{* Add honeypot *}
 					<input class="c-input__t" type="text" name="lastName" id="lastName"/>
 
-					<input id="sendynewsletter_email_oneseven" type="text" name="email" class="account_input" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="{l s='Your email address' mod='sendyintegration'}" required/>
-					<input id="submit_oneseven" type="submit" value="ok" class="btn btn-primary"  name="submitNewsletter" />
+					<div>
+						<div class=""><input id="sendynewsletter_email_oneseven" type="text" name="email" class="account_input" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="{l s='Your email address' mod='sendyintegration'}" required/></div>
+						<div class="g-recaptcha" data-sitekey="{$recaptchaKey}" data-callback="onSubmitNewsletterSignup"></div>
+					</div>
+					<input id="submit_oneseven" type="submit" value="Submit" disabled class="btn btn-primary name="submitNewsletter" />
 				</form>
 
 
@@ -56,7 +67,7 @@
 				<p id="sn_subscribed" class="sn_warning">{l s='Already subscribed.' mod='sendyintegration'}</p>
 				<p id="sn_name" class="sn_warning">{l s='Please enter your name.' mod='sendyintegration'}</p>
 				<p class="sn_success">{l s='Subscription successful.' mod='sendyintegration'}</p>
-			</span>
+			</div>
 		</div>
 	{/if}
 {/if}

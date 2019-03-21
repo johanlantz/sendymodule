@@ -1,12 +1,15 @@
 /* Sendy integration */
 #sendy_newsletter {
+  display:flex; 
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
   padding: 7px;
   border-top: 1px solid #ccc;
   border-bottom: 1px solid #ccc;
   background: #fff;
   margin: 0 auto;
   text-align: center;
-  display: block;
   clear: both;
 }
 #sendy_newsletter p {
@@ -36,10 +39,10 @@
 #sendy_newsletter input#sendynewsletter_email_oneseven,
 #sendy_newsletter input#sendynewsletter_name_oneseven {
   height: 42px;
-  width: 148px;
+  width: 304px;
   border: 1px solid #ccc;
-  margin-bottom: 0px !important;
   vertical-align: middle;
+  margin-bottom: 5px;
 }
 
 #submit_oneseven {

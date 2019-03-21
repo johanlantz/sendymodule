@@ -95,6 +95,7 @@ class SendyIntegration extends Module
         && $this->registerHook('actionCustomerAccountUpdate')
         && Configuration::updateValue('SENDYNEWSLETTER_ACTIVE_ON_PAGES', "index, product, category")
         && Configuration::updateValue('SENDYNEWSLETTER_API_KEY', "")
+        && Configuration::updateValue('SENDYNEWSLETTER_RECAPTCHA_KEY', "")
         && Configuration::updateValue('SENDYNEWSLETTER_IP', true)
         && Configuration::updateValue('SENDYNEWSLETTER_DELETE_ON_UNSUB', false)
         && Configuration::updateValue('SENDYNEWSLETTER_NAME', false)
@@ -121,6 +122,7 @@ class SendyIntegration extends Module
         && $this->unregisterHook('actionCustomerAccountAdd')
         && $this->unregisterHook('actionCustomerAccountUpdate')
         && Configuration::deleteByName('SENDYNEWSLETTER_ACTIVE_ON_PAGES')
+        && Configuration::deleteByName('SENDYNEWSLETTER_RECAPTCHA_KEY')
         && Configuration::deleteByName('SENDYNEWSLETTER_API_KEY')
         && Configuration::deleteByName('SENDYNEWSLETTER_INSTALLATION')
         && Configuration::deleteByName('SENDYNEWSLETTER_IP')
@@ -140,6 +142,7 @@ class SendyIntegration extends Module
     {
         $sendy = array(
             'url' => Configuration::get('SENDYNEWSLETTER_INSTALLATION'),
+            'recaptchaKey' => Configuration::get('SENDYNEWSLETTER_RECAPTCHA_KEY'),
             'list' => Configuration::get('SENDYNEWSLETTER_COUNTRY_' .
                 $this->context->language->iso_code . "_" . Context::getContext()->shop->id),
             'ip' => (int) Configuration::get('SENDYNEWSLETTER_IP'),
@@ -177,6 +180,7 @@ class SendyIntegration extends Module
         $output = null;
         if (Tools::isSubmit('submit' . $this->name)) {
             $installation = Tools::getValue('SENDYNEWSLETTER_INSTALLATION');
+            $recaptchaKey = Tools::getValue('SENDYNEWSLETTER_RECAPTCHA_KEY');
             $ip = (int) Tools::getValue('SENDYNEWSLETTER_IP');
             $delete_on_unsubscribe = Tools::getValue('SENDYNEWSLETTER_DELETE_ON_UNSUB');
             $name = (int) Tools::getValue('SENDYNEWSLETTER_NAME');
@@ -211,6 +215,7 @@ class SendyIntegration extends Module
                 }
 
                 Configuration::updateValue('SENDYNEWSLETTER_INSTALLATION', $installation);
+                Configuration::updateValue('SENDYNEWSLETTER_RECAPTCHA_KEY', $recaptchaKey);
                 Configuration::updateValue('SENDYNEWSLETTER_IP', $ip);
                 Configuration::updateValue('SENDYNEWSLETTER_DELETE_ON_UNSUB', $delete_on_unsubscribe);
                 Configuration::updateValue('SENDYNEWSLETTER_API_KEY', $sendy_api_key);
@@ -305,6 +310,14 @@ class SendyIntegration extends Module
                     'desc' => $this->l('Url address of your sendy installation eg "http://your_sendy_installation"'),
                     'size' => 30,
                     'required' => true,
+                ),
+                array(
+                    'type' => 'text',
+                    'label' => $this->l('Recaptcha Key'),
+                    'name' => 'SENDYNEWSLETTER_RECAPTCHA_KEY',
+                    'desc' => $this->l('Google recaptcha key'),
+                    'size' => 50,
+                    'required' => false,
                 ),
                 array(
                     'type' => 'text',
@@ -507,6 +520,7 @@ class SendyIntegration extends Module
         // Load current value
         $helper->fields_value = array(
             'SENDYNEWSLETTER_INSTALLATION' => Configuration::get('SENDYNEWSLETTER_INSTALLATION'),
+            'SENDYNEWSLETTER_RECAPTCHA_KEY' => Configuration::get('SENDYNEWSLETTER_RECAPTCHA_KEY'),
             'SENDYNEWSLETTER_IP' => Configuration::get('SENDYNEWSLETTER_IP'),
             'SENDYNEWSLETTER_DELETE_ON_UNSUB' => Configuration::get('SENDYNEWSLETTER_DELETE_ON_UNSUB'),
             'SENDYNEWSLETTER_API_KEY' => Configuration::get('SENDYNEWSLETTER_API_KEY'),
