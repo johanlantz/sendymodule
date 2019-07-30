@@ -44,7 +44,7 @@ function onSubmitNewsletterSignup(token) {
 					<input class="c-input__t" type="text" name="lastName" id="lastName"/>
 
 					<div>
-						<div class=""><input id="sendynewsletter_email_oneseven" type="text" name="email" class="account_input" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="{l s='Your email address' mod='sendyintegration'}" required/></div>
+						<div class=""><input id="sendynewsletter_email_oneseven" type="text" name="email" class="account_input" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="john@example.com" required/></div>
 						<div class="g-recaptcha" data-sitekey="{$recaptchaKey}" data-callback="onSubmitNewsletterSignup"></div>
 					</div>
 					<input id="submit_oneseven" type="submit" value="Submit" disabled class="btn btn-primary name="submitNewsletter" />
