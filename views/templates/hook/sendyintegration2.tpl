@@ -26,9 +26,15 @@ function onSubmitNewsletterSignup(token) {
 {if ($sendynews.activeOnPages|strstr:$page.page_name) }
 	{if {$sendynews.list|count_characters} > 1}
 		<div id="sendy_newsletter">
-			<div class="d-none d-lg-block"><img height="150" width="188" src="{$urls.base_url}modules/sendyintegration/views/img/sendy-newsletter-signup-products.jpg"></div>
-			<div class=""><img height="150" width="286" src="{$urls.base_url}modules/sendyintegration/views/img/{$language.iso_code}/sendy-newsletter-signup-subscribe.png"></div>
-			<div class="d-none d-lg-block"><img height="150" width="229" src="{$urls.base_url}modules/sendyintegration/views/img/sendy-newsletter-signup-mail.png"></div>
+			<div class="d-none d-lg-block">
+				 <img height="150" width="188" data-src="{$urls.base_url}modules/sendyintegration/views/img/sendy-newsletter-signup-products.jpg" alt="Sendy" data-full-size-image-url="{$urls.base_url}modules/sendyintegration/views/img/sendy-newsletter-signup-products.jpg" class="lazyload" /> 
+			</div>
+			<div class="">
+				<img height="150" width="286" data-src="{$urls.base_url}modules/sendyintegration/views/img/{$language.iso_code}/sendy-newsletter-signup-subscribe.png" alt="Sendy" data-full-size-image-url="{$urls.base_url}modules/sendyintegration/views/img/{$language.iso_code}/sendy-newsletter-signup-subscribe.png" class="lazyload" /> 
+			</div>
+			<div class="d-none d-lg-block">
+				<img height="150" width="229" data-src="{$urls.base_url}modules/sendyintegration/views/img/sendy-newsletter-signup-mail.png" alt="Sendy" data-full-size-image-url="{$urls.base_url}modules/sendyintegration/views/img/sendy-newsletter-signup-mail.png" class="lazyload" /> 
+			</div>
 
 			<div class="">
 				<form id="sendynewsletter_form" style="display:inline;" action="{$sendynews.url}/subscribe" method="post">
@@ -45,7 +51,7 @@ function onSubmitNewsletterSignup(token) {
 
 					<div>
 						<div class=""><input id="sendynewsletter_email_oneseven" type="text" name="email" class="account_input" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="john@example.com" required/></div>
-						<div class="g-recaptcha" data-sitekey="{$recaptchaKey}" data-callback="onSubmitNewsletterSignup"></div>
+						<div class="g-recaptcha" data-sitekey="{$sendynews.recaptchaKey}" data-callback="onSubmitNewsletterSignup"></div>
 					</div>
 					<input id="submit_oneseven" type="submit" value="Submit" disabled class="btn btn-primary name="submitNewsletter" />
 				</form>
